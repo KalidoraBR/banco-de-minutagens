@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: a tela que o próprio sistema mostra antes do app usa o mesmo fundo e o ícone novo,
+         para emendar sem piscar com a animação de abertura. -->
+    <style name="Theme.BancoDeMinutagens" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/fundo_abertura</item>
+        <item name="android:colorBackground">@color/fundo_abertura</item>
+        <item name="android:windowSplashScreenBackground">@color/fundo_abertura</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_abertura_sistema_vazio</item>
+    </style>
+</resources>

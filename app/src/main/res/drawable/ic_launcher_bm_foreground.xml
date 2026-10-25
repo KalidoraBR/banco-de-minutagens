@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone "Pular abertura": BM dentro do botão, símbolo de avançar e barra de contagem.
+     Reduzido a 72% em volta do centro para caber na área segura do ícone adaptativo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.72"
+        android:scaleY="0.72">
+        <!-- Contorno do botão -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#F2F2F3"
+            android:strokeWidth="4.5"
+            android:pathData="M24,35 H84 A7,7 0 0 1 91,42 V66 A7,7 0 0 1 84,73 H24 A7,7 0 0 1 17,66 V42 A7,7 0 0 1 24,35 Z" />
+        <!-- Trilho e barra de contagem -->
+        <path
+            android:fillColor="#26262C"
+            android:pathData="M23,65 H85 A2,2 0 0 1 85,69 H23 A2,2 0 0 1 23,65 Z" />
+        <path
+            android:fillColor="#E5484D"
+            android:pathData="M23,65 H63 A2,2 0 0 1 63,69 H23 A2,2 0 0 1 23,65 Z" />
+        <!-- B -->
+        <path
+            android:fillColor="#F2F2F3"
+            android:fillType="evenOdd"
+            android:pathData="M28.5,44.5 H36 C39.5,44.5 41.5,46.3 41.5,48.8 C41.5,50.4 40.6,51.6 39.3,52.2 C41.1,52.8 42.3,54.2 42.3,56.2 C42.3,59 40.1,60.5 36.5,60.5 H28.5 Z M32.5,47.6 V50.9 H35.7 C36.9,50.9 37.6,50.3 37.6,49.25 C37.6,48.2 36.9,47.6 35.7,47.6 Z M32.5,53.8 V57.4 H36.1 C37.5,57.4 38.3,56.7 38.3,55.6 C38.3,54.5 37.5,53.8 36.1,53.8 Z" />
+        <!-- M -->
+        <path
+            android:fillColor="#E5484D"
+            android:pathData="M44.5,60.5 V44.5 H48.9 L52.75,53.6 L56.6,44.5 H61 V60.5 H57.3 V51.2 L54.1,58.4 H51.4 L48.2,51.2 V60.5 Z" />
+        <!-- Avançar -->
+        <path
+            android:fillColor="#F2F2F3"
+            android:pathData="M65,46 L71,52.5 L65,59 Z M71,46 L77,52.5 L71,59 Z M78,46 H80.4 V59 H78 Z" />
+    </group>
+</vector>

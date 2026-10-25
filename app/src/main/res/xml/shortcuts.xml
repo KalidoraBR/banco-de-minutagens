@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="continuar"
+        android:enabled="true"
+        android:icon="@drawable/ic_atalho_continuar"
+        android:shortcutShortLabel="@string/atalho_continuar"
+        android:shortcutLongLabel="@string/atalho_continuar_longo">
+        <intent
+            android:action="com.kalidorabr.bancodeminutagens.CONTINUAR"
+            android:targetPackage="com.kalidorabr.bancodeminutagens"
+            android:targetClass="com.kalidorabr.bancodeminutagens.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="buscar"
+        android:enabled="true"
+        android:icon="@drawable/ic_atalho_buscar"
+        android:shortcutShortLabel="@string/atalho_buscar"
+        android:shortcutLongLabel="@string/atalho_buscar_longo">
+        <intent
+            android:action="com.kalidorabr.bancodeminutagens.BUSCAR"
+            android:targetPackage="com.kalidorabr.bancodeminutagens"
+            android:targetClass="com.kalidorabr.bancodeminutagens.MainActivity" />
+    </shortcut>
+</shortcuts>

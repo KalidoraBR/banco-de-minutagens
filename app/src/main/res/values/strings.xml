@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Banco de Minutagens</string>
+    <string name="atalho_continuar">Continuar</string>
+    <string name="atalho_continuar_longo">Continuar minutagem</string>
+    <string name="atalho_buscar">Buscar série</string>
+    <string name="atalho_buscar_longo">Buscar série</string>
+</resources>
