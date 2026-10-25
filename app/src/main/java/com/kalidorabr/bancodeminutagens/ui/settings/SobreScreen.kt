@@ -62,9 +62,19 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
-        versao = "1.8",
+        versao = "1.9",
         data = "25/10/2026",
         isAtual = true,
+        alteracoes = listOf(
+            "IntroDB: a conferência do que já está no site não para mais no meio quando o site pede uma pausa; ela espera e continua.",
+            "IntroDB: a nuvem só aparece quando o site realmente tem os dados (envios em revisão não contam).",
+            "IntroDB: ao abrir uma temporada, os episódios ainda não conferidos são conferidos sozinhos."
+        )
+    ),
+    VersaoHistoricoItem(
+        versao = "1.8",
+        data = "25/10/2026",
+        isAtual = false,
         alteracoes = listOf(
             "Integração com o IntroDB: envio das minutagens pelo menu da temporada (escolhendo os episódios) ou sozinho ao tocar em Concluir, com pop-up próprio de progresso.",
             "IntroDB: o app confere o que já está no site (nuvem nos episódios) e oferece \"Usar\" os tempos de lá nas seções vazias, que ficam editáveis.",

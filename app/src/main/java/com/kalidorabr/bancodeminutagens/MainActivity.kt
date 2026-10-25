@@ -326,7 +326,7 @@ fun BancoDeMinutagensApp(
         if (!ok) Toast.makeText(context, "Sem permissão de notificação, o aviso de estreia fica desligado", Toast.LENGTH_LONG).show()
     }
     // IntroDB: envio manual, separado da sincronização com o Google Sheets
-    val introDbPrefs = remember(context) { com.kalidorabr.bancodeminutagens.data.IntroDbPreferences(context) }
+    val introDbPrefs = remember(context) { com.kalidorabr.bancodeminutagens.data.IntroDbPreferences(context).also { it.refazerConferenciasUmaVez() } }
     var chaveIntroDb by remember { mutableStateOf(introDbPrefs.chave()) }
     var avisoIntroDb by remember { mutableStateOf<Triple<String, String, TipoAvisoTemaA>?>(null) }
     var enviandoIntroDb by remember { mutableStateOf(false) }
@@ -641,24 +641,40 @@ fun BancoDeMinutagensApp(
 
     // Confere no IntroDB (sem chave) o que já existe de cada episódio, para não repetir trabalho.
     // Roda com calma, um episódio por vez; para se o site pedir pausa.
-    fun conferirNoIntroDb(serieId: String, soNaoConferidos: Boolean = true, aoTerminar: (Int) -> Unit = {}) {
+    var conferindoIntroDb by remember { mutableStateOf(false) }
+    fun conferirNoIntroDb(serieId: String, soNaoConferidos: Boolean = true, temporadaId: String? = null, aoTerminar: (Int) -> Unit = {}) {
+        if (conferindoIntroDb) return
+        conferindoIntroDb = true
         coroutineScope.launch {
-            val imdb = imdbDaSerie(serieId) ?: return@launch
-            val serie = seriesListState.firstOrNull { it.id == serieId } ?: return@launch
-            var comDados = 0
-            loop@ for (temporada in serie.temporadas) {
-                val numero = SerieProgressoUtils.numeroTemporada(temporada.numero) ?: continue
-                for (ep in temporada.episodios.sortedBy { it.numero }) {
-                    if (soNaoConferidos && introDbPrefs.conferido(ep.id)) continue
-                    val tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, numero, ep.numero) ?: continue
-                    if (com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE in tipos) break@loop
-                    introDbPrefs.salvarNoSite(ep.id, tipos)
-                    if (tipos.isNotEmpty()) comDados++
-                    delay(350)
+            try {
+                val imdb = imdbDaSerie(serieId) ?: return@launch
+                val serie = seriesListState.firstOrNull { it.id == serieId } ?: return@launch
+                var comDados = 0
+                loop@ for (temporada in serie.temporadas.filter { temporadaId == null || it.id == temporadaId }) {
+                    val numero = SerieProgressoUtils.numeroTemporada(temporada.numero) ?: continue
+                    for (ep in temporada.episodios.sortedBy { it.numero }) {
+                        if (soNaoConferidos && introDbPrefs.conferido(ep.id)) continue
+                        var tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, numero, ep.numero)
+                        // o site pediu pausa: espera e tenta o mesmo episódio de novo (até 3 vezes)
+                        var tentativas = 0
+                        while (tipos != null && com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE in tipos && tentativas < 3) {
+                            tentativas++
+                            delay(20_000L * tentativas)
+                            tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, numero, ep.numero)
+                        }
+                        if (tipos == null) continue
+                        if (com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE in tipos) break@loop
+                        introDbPrefs.salvarNoSite(ep.id, tipos)
+                        if (tipos.isNotEmpty()) comDados++
+                        marcaIntroDb++
+                        delay(600)
+                    }
                 }
+                aoTerminar(comDados)
+            } finally {
+                conferindoIntroDb = false
+                marcaIntroDb++
             }
-            marcaIntroDb++
-            aoTerminar(comDados)
         }
     }
 
@@ -700,7 +716,6 @@ fun BancoDeMinutagensApp(
                     val estado = when (val r = com.kalidorabr.bancodeminutagens.data.IntroDbService.enviar(chaveIntroDb, imdb, item)) {
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.Ok -> {
                             introDbPrefs.marcarEnviado(item)
-                            introDbPrefs.salvarNoSite(item.episodioId, introDbPrefs.noSite(item.episodioId) + item.segmentType)
                             ItemProgressoIntroDb(item.rotulo, EstadoItemIntroDb.ENVIADO)
                         }
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.ChaveInvalida -> {
@@ -1467,6 +1482,9 @@ fun BancoDeMinutagensApp(
                     temChaveIntroDb = chaveIntroDb.isNotBlank(),
                     noIntroDb = remember(marcaIntroDb, activeTemporada.episodios) {
                         activeTemporada.episodios.filter { introDbPrefs.noSite(it.id).isNotEmpty() }.map { it.id }.toSet()
+                    },
+                    conferirAoAbrir = {
+                        conferirNoIntroDb(activeSerie.id, soNaoConferidos = true, temporadaId = activeTemporada.id)
                     },
                     onConferirIntroDb = {
                         avisoIntroDb = Triple("Conferindo no IntroDB…", activeSerie.titulo, TipoAvisoTemaA.ATENCAO)

@@ -538,8 +538,10 @@ fun TelaTemporada(
     temChaveIntroDb: Boolean = false,
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
-    onConferirIntroDb: () -> Unit = {}
+    onConferirIntroDb: () -> Unit = {},
+    conferirAoAbrir: () -> Unit = {}
 ) {
+    LaunchedEffect(Unit) { conferirAoAbrir() }
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> TemporadaDetailTemaBScreen(...)

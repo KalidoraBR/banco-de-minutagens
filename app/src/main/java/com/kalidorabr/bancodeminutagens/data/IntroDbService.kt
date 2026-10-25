@@ -51,7 +51,20 @@ class IntroDbPreferences(context: Context) {
         prefs.edit { putStringSet(KEY_NO_SITE + episodioId, tipos) }
     }
 
+    /**
+     * Versão 1.9: apaga uma vez as marcas "no site" antigas (a 1.8 marcava ao enviar, mesmo que o site
+     * ainda não mostrasse), para tudo ser conferido de novo. O registro do que já foi enviado fica.
+     */
+    fun refazerConferenciasUmaVez() {
+        if (prefs.getBoolean(KEY_CONFERENCIA_V2, false)) return
+        prefs.edit {
+            prefs.all.keys.filter { it.startsWith(KEY_NO_SITE) }.forEach { remove(it) }
+            putBoolean(KEY_CONFERENCIA_V2, true)
+        }
+    }
+
     private companion object {
+        const val KEY_CONFERENCIA_V2 = "conferencia_v2"
         const val KEY_CHAVE = "api_key"
         const val KEY_ENVIADO = "enviado_"
         const val KEY_AUTO = "automatico"
