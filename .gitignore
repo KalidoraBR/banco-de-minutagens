@@ -22,3 +22,8 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# rascunhos de design (ficam só no computador)
+/FORMULARIO_AJUSTE_VISUAL.md
+/preview-*.png
+/propostas-visuais/
