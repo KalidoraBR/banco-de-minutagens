@@ -67,6 +67,13 @@ class NovidadesPreferences(context: Context) {
         prefs.edit { putString(KEY_CONCLUSOES, JSONObject(atual as Map<*, *>).toString()) }
     }
 
+    /** Junta os dias de conclusão vindos de um backup (o que já existe no aparelho continua valendo). */
+    fun mesclarConclusoes(doBackup: Map<String, Long>) {
+        if (doBackup.isEmpty()) return
+        val atual = doBackup + conclusoes()
+        prefs.edit { putString(KEY_CONCLUSOES, JSONObject(atual as Map<*, *>).toString()) }
+    }
+
     /** Modo maratona: Concluir abre o próximo episódio em vez de voltar para a temporada. */
     fun maratona(): Boolean = prefs.getBoolean(KEY_MARATONA, false)
 
@@ -76,6 +83,13 @@ class NovidadesPreferences(context: Context) {
 
     /** Séries cuja duração dos episódios já foi buscada no TMDB (busca uma vez só). */
     fun duracaoBuscada(serieId: String): Boolean = serieId in prefs.getStringSet(KEY_DURACOES, emptySet()).orEmpty()
+
+    /** Códigos do IMDb/TVDB já conferidos no TMDB (uma vez por série, a partir da 1.10). */
+    fun codigosConferidos(serieId: String): Boolean = serieId in prefs.getStringSet(KEY_CODIGOS, emptySet()).orEmpty()
+
+    fun marcarCodigosConferidos(serieId: String) {
+        prefs.edit { putStringSet(KEY_CODIGOS, prefs.getStringSet(KEY_CODIGOS, emptySet()).orEmpty() + serieId) }
+    }
 
     fun marcarDuracaoBuscada(serieId: String) {
         prefs.edit { putStringSet(KEY_DURACOES, prefs.getStringSet(KEY_DURACOES, emptySet()).orEmpty() + serieId) }
@@ -98,6 +112,7 @@ class NovidadesPreferences(context: Context) {
         const val KEY_INICIO_CONTAGEM = "inicio_contagem"
         const val KEY_ULTIMA_BUSCA_EPISODIOS = "ultima_busca_episodios"
         const val KEY_DISPENSADOS = "episodios_dispensados"
+        const val KEY_CODIGOS = "codigos_conferidos"
         const val KEY_CONCLUSOES = "conclusoes"
     }
 }

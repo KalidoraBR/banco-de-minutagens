@@ -1,5 +1,7 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.foundation.layout.aspectRatio
 import com.kalidorabr.bancodeminutagens.ui.temac.ambienteC
 import com.kalidorabr.bancodeminutagens.ui.temab.topoEscuroB
@@ -86,7 +88,10 @@ fun TemporadaDetailTemaAScreen(
     temChaveIntroDb: Boolean = false,
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
-    onConferirIntroDb: () -> Unit = {}
+    onConferirIntroDb: () -> Unit = {},
+    temporadaAnterior: String? = null,
+    temporadaProxima: String? = null,
+    onTrocarTemporada: (Int) -> Unit = {}
 ) {
     val accent = MaterialTheme.colorScheme.primary
     var filtro by remember { mutableStateOf(FiltroEpTemaA.TODOS) }
@@ -178,6 +183,33 @@ fun TemporadaDetailTemaAScreen(
                 }
             }
 
+            // Setas para ir direto à temporada vizinha
+            if (!selecionando && (temporadaAnterior != null || temporadaProxima != null)) {
+                Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (temporadaAnterior != null) {
+                        Row(
+                            Modifier.clip(CircleShape).background(TemaATokens.DarkCardSurface)
+                                .clickable { onTrocarTemporada(-1) }.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Temporada anterior", tint = TemaATokens.TextWhite, modifier = Modifier.size(20.dp))
+                            Text(temporadaAnterior, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (temporadaProxima != null) {
+                        Row(
+                            Modifier.clip(CircleShape).background(TemaATokens.DarkCardSurface)
+                                .clickable { onTrocarTemporada(1) }.padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(temporadaProxima, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próxima temporada", tint = TemaATokens.TextWhite, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(20.dp))
             if (TemaVisual.d) {
                 // Tema D: anel grande no centro com os números em volta, como um painel

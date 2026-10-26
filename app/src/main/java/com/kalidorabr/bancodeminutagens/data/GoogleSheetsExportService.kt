@@ -323,6 +323,8 @@ object GoogleSheetsExportService {
             sObj.put("releaseYear", serie.ano)
             sObj.put("imdbId", serie.imdbId)
             sObj.put("tvdbId", serie.tvdbId)
+            // selo da série: o script grava na F2
+            sObj.put("status", serie.status)
 
             // Objeto de Minutagens Fixas
             val fixedTimingsObj = JSONObject()
@@ -345,8 +347,9 @@ object GoogleSheetsExportService {
                     val epObj = JSONObject()
                     epObj.put("episodeNumber", ep.numero)
                     epObj.put("title", ep.titulo)
-                    epObj.put("imdbId", "")
-                    epObj.put("tvdbId", "")
+                    // códigos da série em cada episódio (colunas J e K); vazio não apaga o que está na planilha
+                    epObj.put("imdbId", serie.imdbId.trim().takeIf { it.startsWith("tt") }.orEmpty())
+                    epObj.put("tvdbId", serie.tvdbId.trim().takeIf { it.isNotEmpty() && it.all(Char::isDigit) }.orEmpty())
 
                     val localAbertura = ep.minutagens.firstOrNull { it.tipo == TipoMinutagem.ABERTURA }
                     val localRecap = ep.minutagens.firstOrNull { it.tipo == TipoMinutagem.RECAP }

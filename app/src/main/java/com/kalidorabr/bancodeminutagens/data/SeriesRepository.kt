@@ -70,7 +70,8 @@ class SeriesRepository(context: Context) {
         }
     }
 
-    fun criarBackup(seriesList: List<SerieItem>): String {
+    /** [conclusoes]: dia em que cada episódio foi concluído (alimenta "Últimos 7 dias" nas Estatísticas). */
+    fun criarBackup(seriesList: List<SerieItem>, conclusoes: Map<String, Long> = emptyMap()): String {
         val root = JSONObject()
         root.put("format", "banco-de-minutagens-backup")
         root.put("version", 1)
@@ -78,7 +79,14 @@ class SeriesRepository(context: Context) {
         val data = JSONArray()
         seriesList.forEach { data.put(serieToJson(it)) }
         root.put("series", data)
+        root.put("conclusoes", JSONObject(conclusoes as Map<*, *>))
         return root.toString(2)
+    }
+
+    /** Dias de conclusão guardados no backup (backups antigos não têm: volta vazio). */
+    fun lerConclusoesBackup(content: String): Map<String, Long> {
+        val json = runCatching { JSONObject(content).optJSONObject("conclusoes") }.getOrNull() ?: return emptyMap()
+        return json.keys().asSequence().associateWith { json.optLong(it) }
     }
 
     fun lerBackup(content: String): List<SerieItem> {

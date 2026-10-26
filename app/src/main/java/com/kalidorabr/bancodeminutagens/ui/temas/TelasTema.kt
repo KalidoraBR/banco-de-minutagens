@@ -516,12 +516,15 @@ fun TelaAjustes(
 
 @Composable
 fun TelaSobre(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    versaoNova: String? = null,
+    onProcurarAtualizacao: suspend () -> Result<String?> = { Result.success(null) },
+    onAtualizar: () -> Unit = {}
 ) {
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> SobreTemaBScreen(...)
-        else -> SobreTemaAScreen(onBackClick = onBackClick)
+        else -> SobreTemaAScreen(onBackClick = onBackClick, versaoNova = versaoNova, onProcurarAtualizacao = onProcurarAtualizacao, onAtualizar = onAtualizar)
     }
 }
 
@@ -539,12 +542,16 @@ fun TelaTemporada(
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
     onConferirIntroDb: () -> Unit = {},
-    conferirAoAbrir: () -> Unit = {}
+    conferirAoAbrir: () -> Unit = {},
+    temporadaAnterior: String? = null,
+    temporadaProxima: String? = null,
+    onTrocarTemporada: (Int) -> Unit = {}
 ) {
-    LaunchedEffect(Unit) { conferirAoAbrir() }
+    // nome da temporada como chave: ao trocar pelas setas, confere a nova também
+    LaunchedEffect(nomeTemporada) { conferirAoAbrir() }
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> TemporadaDetailTemaBScreen(...)
-        else -> TemporadaDetailTemaAScreen(nomeSerie = nomeSerie, nomeTemporada = nomeTemporada, episodios = episodios, onBackClick = onBackClick, onExportJsonClick = onExportJsonClick, onBatchFillConfirmed = onBatchFillConfirmed, onEpisodioClick = onEpisodioClick, onLimparEpisodiosConfirmed = onLimparEpisodiosConfirmed, temChaveIntroDb = temChaveIntroDb, onEnviarIntroDbConfirmed = onEnviarIntroDbConfirmed, noIntroDb = noIntroDb, onConferirIntroDb = onConferirIntroDb)
+        else -> TemporadaDetailTemaAScreen(nomeSerie = nomeSerie, nomeTemporada = nomeTemporada, episodios = episodios, onBackClick = onBackClick, onExportJsonClick = onExportJsonClick, onBatchFillConfirmed = onBatchFillConfirmed, onEpisodioClick = onEpisodioClick, onLimparEpisodiosConfirmed = onLimparEpisodiosConfirmed, temChaveIntroDb = temChaveIntroDb, onEnviarIntroDbConfirmed = onEnviarIntroDbConfirmed, noIntroDb = noIntroDb, onConferirIntroDb = onConferirIntroDb, temporadaAnterior = temporadaAnterior, temporadaProxima = temporadaProxima, onTrocarTemporada = onTrocarTemporada)
     }
 }

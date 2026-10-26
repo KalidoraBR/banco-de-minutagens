@@ -62,9 +62,26 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.10",
+        data = "26/10/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "Atualização dentro do app: tocar em Atualizar baixa a versão nova com porcentagem e abre o instalador do Android, sem sair do app.",
+            "Novo botão \"Procurar atualização\" em Ajustes › Sobre, e o aviso de versão nova também aparece ao voltar para o app.",
+            "Planilha: o status da série (Em andamento, Finalizada, Incompleta, Em breve) agora fica guardado na planilha e volta certo ao importar.",
+            "Planilha: os códigos do IMDb e do TVDB são preenchidos sozinhos nas colunas de todos os episódios; o TVDB digitado à mão também passa a valer no app.",
+            "Códigos do IMDb e do TVDB vindos do TMDB ao adicionar ou atualizar uma série (corrige código errado).",
+            "IntroDB: com o app aberto, as séries são conferidas sozinhas aos poucos, a cada 10 minutos.",
+            "IntroDB: a conferência mostra a porcentagem, e o pop-up de envio segue a ordem dos episódios.",
+            "Setas na tela da temporada para ir direto à anterior ou à próxima.",
+            "Backup: guarda também os \"Últimos 7 dias\" das Estatísticas.",
+            "Correção: uma série finalizada não volta mais para \"Em andamento\" ao importar da planilha ou quando o app atualiza a duração dos episódios."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.9",
         data = "25/10/2026",
-        isAtual = true,
+        isAtual = false,
         alteracoes = listOf(
             "IntroDB: a conferência do que já está no site não para mais no meio quando o site pede uma pausa; ela espera e continua.",
             "IntroDB: a nuvem só aparece quando o site realmente tem os dados (envios em revisão não contam).",

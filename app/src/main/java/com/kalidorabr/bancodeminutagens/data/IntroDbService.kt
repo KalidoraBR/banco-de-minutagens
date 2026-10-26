@@ -48,7 +48,25 @@ class IntroDbPreferences(context: Context) {
     fun conferido(episodioId: String): Boolean = prefs.contains(KEY_NO_SITE + episodioId)
 
     fun salvarNoSite(episodioId: String, tipos: Set<String>) {
-        prefs.edit { putStringSet(KEY_NO_SITE + episodioId, tipos) }
+        prefs.edit {
+            putStringSet(KEY_NO_SITE + episodioId, tipos)
+            putLong(KEY_CONFERIDO_EM + episodioId, System.currentTimeMillis())
+        }
+    }
+
+    /** Esquece o que foi conferido destes episódios (ex.: o código do IMDb da série mudou). */
+    fun esquecerConferencias(episodioIds: Collection<String>) {
+        prefs.edit { episodioIds.forEach { remove(KEY_NO_SITE + it); remove(KEY_CONFERIDO_EM + it) } }
+    }
+
+    /** Quando o episódio foi conferido pela última vez (0 = nunca, ou antes da 1.10). */
+    fun conferidoEm(episodioId: String): Long = prefs.getLong(KEY_CONFERIDO_EM + episodioId, 0L)
+
+    /** Conferência automática em segundo plano (ligada por padrão). */
+    fun conferenciaAutomatica(): Boolean = prefs.getBoolean(KEY_CONF_AUTO, true)
+
+    fun salvarConferenciaAutomatica(ligado: Boolean) {
+        prefs.edit { putBoolean(KEY_CONF_AUTO, ligado) }
     }
 
     /**
@@ -69,6 +87,8 @@ class IntroDbPreferences(context: Context) {
         const val KEY_ENVIADO = "enviado_"
         const val KEY_AUTO = "automatico"
         const val KEY_NO_SITE = "no_site_"
+        const val KEY_CONFERIDO_EM = "conferido_em_"
+        const val KEY_CONF_AUTO = "conferencia_automatica"
     }
 }
 

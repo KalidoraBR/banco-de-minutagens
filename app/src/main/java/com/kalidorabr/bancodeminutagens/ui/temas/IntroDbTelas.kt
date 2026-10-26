@@ -115,7 +115,12 @@ fun DialogoIntroDb(progresso: ProgressoIntroDb?, onFechar: () -> Unit) {
                     Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(TemaATokens.Track)) {
                         Box(Modifier.fillMaxWidth(fracao).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(accent))
                     }
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "${(fracao * 100).toInt()}%",
+                            color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold
+                        )
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             progresso.etapa.ifBlank { "${progresso.resolvidos} de ${progresso.itens.size} seções" },
                             color = TemaATokens.TextGray, fontSize = 12.sp, modifier = Modifier.weight(1f)

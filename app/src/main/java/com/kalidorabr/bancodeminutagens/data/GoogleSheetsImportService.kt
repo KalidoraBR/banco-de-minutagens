@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.data
 
+import com.kalidorabr.bancodeminutagens.model.StatusPlanilha
 import android.util.Log
 import com.kalidorabr.bancodeminutagens.model.EpisodioItem
 import com.kalidorabr.bancodeminutagens.model.EstadoMinutagem
@@ -168,6 +169,7 @@ object GoogleSheetsImportService {
         val imdbId: String,
         val tvdbId: String,
         val status: String,
+        val temStatusDaPlanilha: Boolean,
         val fixedOpening: String,
         val fixedRecap: String,
         val fixedEnding: String,
@@ -251,6 +253,15 @@ object GoogleSheetsImportService {
         return resultList
     }
 
+    /** TVDB da série: o do topo da aba ou, se não houver, o primeiro preenchido na coluna K dos episódios. */
+    private fun tvdbDaPlanilha(serie: SheetSeriesData): String =
+        serie.tvdbId.trim().ifBlank {
+            serie.episodeRows.asSequence()
+                .map { it.optString("tvdbId", "").trim().removePrefix("'") }
+                .firstOrNull { it.isNotEmpty() && it.all(Char::isDigit) }
+                .orEmpty()
+        }
+
     private fun parseSheetSeriesObject(sObj: JSONObject): SheetSeriesData {
         val tmdbId = normalizeTmdbId(sObj.opt("tmdbId") ?: sObj.opt("id"))
         val title = sObj.optString("title", "").ifBlank { sObj.optString("titulo", "") }.ifBlank { sObj.optString("name", "") }
@@ -258,6 +269,7 @@ object GoogleSheetsImportService {
         val imdbId = sObj.optString("imdbId", "")
         val tvdbId = sObj.optString("tvdbId", "")
         val status = sObj.optString("status", "")
+        val temStatusDaPlanilha = sObj.optBoolean("statusDaPlanilha", false)
 
         val fixedObj = sObj.optJSONObject("fixedTimings") ?: sObj.optJSONObject("minutagensFixas")
         val fixedOpening = parseTimingString(fixedObj?.opt("opening") ?: fixedObj?.opt("abertura") ?: sObj.opt("fixedOpening"))
@@ -273,6 +285,7 @@ object GoogleSheetsImportService {
             imdbId = imdbId,
             tvdbId = tvdbId,
             status = status,
+            temStatusDaPlanilha = temStatusDaPlanilha,
             fixedOpening = fixedOpening,
             fixedRecap = fixedRecap,
             fixedEnding = fixedEnding,
@@ -314,13 +327,12 @@ object GoogleSheetsImportService {
                 val newTitle = sheetSeries.title
                 val newYear = sheetSeries.releaseYear
                 val newImdb = sheetSeries.imdbId
-                val newTvdb = sheetSeries.tvdbId
-                val newStatus = sheetSeries.status
+                val newTvdb = tvdbDaPlanilha(sheetSeries)
 
                 localSerie.copy(
                     titulo = if (newTitle.isNotBlank()) newTitle else localSerie.titulo,
                     ano = if (newYear > 0) newYear else localSerie.ano,
-                    status = if (newStatus.isNotBlank()) newStatus else localSerie.status,
+                    status = StatusPlanilha.escolher(localSerie.status, sheetSeries.status, sheetSeries.temStatusDaPlanilha),
                     imdbId = if (newImdb.isNotBlank()) newImdb else localSerie.imdbId,
                     tvdbId = if (newTvdb.isNotBlank()) newTvdb else localSerie.tvdbId
                 )
@@ -329,14 +341,14 @@ object GoogleSheetsImportService {
                 val newTitle = sheetSeries.title.ifBlank { "Série $tmdbId" }
                 val newYear = sheetSeries.releaseYear
                 val newImdb = sheetSeries.imdbId
-                val newTvdb = sheetSeries.tvdbId
+                val newTvdb = tvdbDaPlanilha(sheetSeries)
 
                 SerieItem(
                     id = tmdbId,
                     titulo = newTitle,
                     ano = newYear,
                     generos = "Importada",
-                    status = if (sheetSeries.status.isNotBlank()) sheetSeries.status else "Em andamento",
+                    status = StatusPlanilha.escolher("Em andamento", sheetSeries.status, sheetSeries.temStatusDaPlanilha),
                     episodiosAssistidos = 0,
                     totalEpisodios = 0,
                     proximoEpisodio = "S01E01",

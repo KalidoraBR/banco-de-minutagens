@@ -299,8 +299,63 @@ fun BancoDeMinutagensApp(
     var maratona by remember { mutableStateOf(novidadesPrefs.maratona()) }
     // Versão nova publicada no GitHub (o app só avisa; quem instala é o Android, com a confirmação do usuário)
     var versaoNova by remember { mutableStateOf<com.kalidorabr.bancodeminutagens.data.VersaoNova?>(null) }
-    LaunchedEffect(Unit) {
-        if (isNetworkAvailable(context)) versaoNova = com.kalidorabr.bancodeminutagens.data.Atualizacao.verificar(com.kalidorabr.bancodeminutagens.BuildConfig.VERSION_NAME)
+    // Atualização dentro do app: baixa o arquivo (com porcentagem) e entrega ao instalador do Android.
+    // Se o Android ainda não permitir, abre a permissão e instala sozinho quando o usuário voltar.
+    var baixandoAtualizacao by remember { mutableStateOf<Int?>(null) }
+    var apkPronto by remember { mutableStateOf<java.io.File?>(null) }
+    var avisoAtualizacao by remember { mutableStateOf<String?>(null) }
+    fun entregarAoInstalador(arquivo: java.io.File) {
+        val at = com.kalidorabr.bancodeminutagens.data.Atualizacao
+        if (at.podeInstalar(context)) {
+            apkPronto = null
+            runCatching { at.instalar(context, arquivo) }
+                .onFailure { avisoAtualizacao = "Não deu para abrir o instalador." }
+        } else {
+            apkPronto = arquivo
+            avisoAtualizacao = "Permita \"Instalar apps\" para o Banco de Minutagens e volte: a instalação começa sozinha."
+            runCatching { at.pedirPermissao(context) }
+        }
+    }
+    fun iniciarAtualizacao() {
+        val v = versaoNova ?: return
+        if (baixandoAtualizacao != null) return
+        apkPronto?.let { if (it.exists()) { entregarAoInstalador(it); return } }
+        if (!com.kalidorabr.bancodeminutagens.data.Atualizacao.linkDeArquivo(v.link)) {
+            // versão publicada sem o arquivo do app: abre a página dela
+            runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(v.link))) }
+            return
+        }
+        avisoAtualizacao = null
+        baixandoAtualizacao = 0
+        coroutineScope.launch {
+            runCatching {
+                com.kalidorabr.bancodeminutagens.data.Atualizacao.baixar(context, v.link) { baixandoAtualizacao = it }
+            }.onSuccess { entregarAoInstalador(it) }
+                .onFailure { avisoAtualizacao = "Não deu para baixar a versão ${v.versao}. Veja a internet e tente de novo." }
+            baixandoAtualizacao = null
+        }
+    }
+
+    // Confere ao abrir e também toda vez que o usuário volta para o app (no máximo a cada 30 min)
+    var ultimaConferencia by remember { mutableStateOf(0L) }
+    val donoCiclo = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(donoCiclo) {
+        val observador = androidx.lifecycle.LifecycleEventObserver { _, evento ->
+            if (evento == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                // voltou da tela de permissão: segue com a instalação
+                apkPronto?.let { if (com.kalidorabr.bancodeminutagens.data.Atualizacao.podeInstalar(context)) { avisoAtualizacao = null; entregarAoInstalador(it) } }
+                val agora = System.currentTimeMillis()
+                if (agora - ultimaConferencia >= 30 * 60 * 1000L && isNetworkAvailable(context)) {
+                    ultimaConferencia = agora
+                    coroutineScope.launch {
+                        com.kalidorabr.bancodeminutagens.data.Atualizacao.verificar(com.kalidorabr.bancodeminutagens.BuildConfig.VERSION_NAME)
+                            ?.let { versaoNova = it }
+                    }
+                }
+            }
+        }
+        donoCiclo.lifecycle.addObserver(observador)
+        onDispose { donoCiclo.lifecycle.removeObserver(observador) }
     }
     var avisoEstreia by remember { mutableStateOf(novidadesPrefs.avisoEstreia()) }
     var backupAutoPasta by remember { mutableStateOf(com.kalidorabr.bancodeminutagens.data.BackupAutomatico.nomePasta(context)) }
@@ -352,6 +407,7 @@ fun BancoDeMinutagensApp(
         if (uri != null) runCatching {
             val content = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
                 ?: error("Arquivo indisponível")
+            novidadesPrefs.mesclarConclusoes(repository.lerConclusoesBackup(content))
             repository.lerBackup(content)
         }.onSuccess { restored ->
             episodiosNovos = emptyList() // eram da coleção antiga
@@ -538,6 +594,7 @@ fun BancoDeMinutagensApp(
         // Enriquecimento automático de metadados, pôsteres e datas de episódios se ausentes
         val seriesComDadosAusentes = seriesSalvas.filter { serie ->
             // duração dos episódios: busca uma vez por série
+            !novidadesPrefs.codigosConferidos(serie.id) ||
             (!novidadesPrefs.duracaoBuscada(serie.id) && serie.temporadas.any { t -> t.episodios.any { it.duracaoMin == 0 } }) ||
             serie.posterUrl.isBlank() ||
             serie.sinopse.startsWith("Série importada") ||
@@ -555,7 +612,17 @@ fun BancoDeMinutagensApp(
                         listAtualizada = listAtualizada.map { s ->
                             if (s.id == serie.id) serieEnriquecida else s
                         }
-                        if (serieEnriquecida !== serie) novidadesPrefs.marcarDuracaoBuscada(serie.id)
+                        if (serieEnriquecida !== serie) {
+                            novidadesPrefs.marcarDuracaoBuscada(serie.id)
+                            novidadesPrefs.marcarCodigosConferidos(serie.id)
+                            if (serieEnriquecida.imdbId != serie.imdbId) {
+                                introDbPrefs.esquecerConferencias(serie.temporadas.flatMap { t -> t.episodios.map { it.id } })
+                            }
+                            // códigos novos ou corrigidos: vão para as colunas J e K na próxima sincronização
+                            if (serieEnriquecida.imdbId != serie.imdbId || serieEnriquecida.tvdbId != serie.tvdbId) {
+                                prefs.setPendingExport(true)
+                            }
+                        }
                     } catch (_: Exception) {}
                 }
                 if (listAtualizada != seriesSalvas) {
@@ -620,7 +687,8 @@ fun BancoDeMinutagensApp(
         val anteriores = seriesListState.associateBy { it.id }
         val novasSeries = novasSeries0.map { nova ->
             val antiga = anteriores[nova.id]
-            if (antiga != null && antiga.temporadas != nova.temporadas) {
+            fun marcas(s: SerieItem) = s.temporadas.map { t -> t.episodios.map { it.id to it.minutagens } }
+            if (antiga != null && marcas(antiga) != marcas(nova)) {
                 SerieProgressoUtils.aplicarStatusAutomatico(nova)
             } else nova
         }
@@ -642,7 +710,12 @@ fun BancoDeMinutagensApp(
     // Confere no IntroDB (sem chave) o que já existe de cada episódio, para não repetir trabalho.
     // Roda com calma, um episódio por vez; para se o site pedir pausa.
     var conferindoIntroDb by remember { mutableStateOf(false) }
-    fun conferirNoIntroDb(serieId: String, soNaoConferidos: Boolean = true, temporadaId: String? = null, aoTerminar: (Int) -> Unit = {}) {
+    // lote da conferência automática em andamento: a manual tem preferência e interrompe ele
+    var loteAutomatico by remember { mutableStateOf<Job?>(null) }
+    // número do lote automático atual: só o lote "dono" libera a conferência ao terminar
+    val loteAtual = remember { intArrayOf(0) }
+    fun conferirNoIntroDb(serieId: String, soNaoConferidos: Boolean = true, temporadaId: String? = null, aoProgresso: (Int, Int) -> Unit = { _, _ -> }, aoTerminar: (Int) -> Unit = {}) {
+        loteAutomatico?.let { loteAtual[0]++; it.cancel(); loteAutomatico = null; conferindoIntroDb = false }
         if (conferindoIntroDb) return
         conferindoIntroDb = true
         coroutineScope.launch {
@@ -650,10 +723,18 @@ fun BancoDeMinutagensApp(
                 val imdb = imdbDaSerie(serieId) ?: return@launch
                 val serie = seriesListState.firstOrNull { it.id == serieId } ?: return@launch
                 var comDados = 0
-                loop@ for (temporada in serie.temporadas.filter { temporadaId == null || it.id == temporadaId }) {
+                val alvo = serie.temporadas.filter { temporadaId == null || it.id == temporadaId }
+                val total = alvo.sumOf { t ->
+                    if (SerieProgressoUtils.numeroTemporada(t.numero) == null) 0
+                    else t.episodios.count { !(soNaoConferidos && introDbPrefs.conferido(it.id)) }
+                }
+                var feitos = 0
+                aoProgresso(0, total)
+                loop@ for (temporada in alvo) {
                     val numero = SerieProgressoUtils.numeroTemporada(temporada.numero) ?: continue
                     for (ep in temporada.episodios.sortedBy { it.numero }) {
                         if (soNaoConferidos && introDbPrefs.conferido(ep.id)) continue
+                        feitos++
                         var tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, numero, ep.numero)
                         // o site pediu pausa: espera e tenta o mesmo episódio de novo (até 3 vezes)
                         var tentativas = 0
@@ -662,6 +743,7 @@ fun BancoDeMinutagensApp(
                             delay(20_000L * tentativas)
                             tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, numero, ep.numero)
                         }
+                        aoProgresso(feitos, total)
                         if (tipos == null) continue
                         if (com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE in tipos) break@loop
                         introDbPrefs.salvarNoSite(ep.id, tipos)
@@ -675,6 +757,56 @@ fun BancoDeMinutagensApp(
                 conferindoIntroDb = false
                 marcaIntroDb++
             }
+        }
+    }
+
+    // Conferência automática: enquanto o app está aberto, a cada 10 min confere um lote pequeno de episódios
+    // de todas as séries (os nunca conferidos primeiro; os sem dados completos voltam a ser conferidos depois de 1 dia).
+    // Para o lote inteiro se o site pedir pausa. A conferência manual continua igual.
+    LaunchedEffect(Unit) {
+        val formatoBr = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        delay(60_000L)
+        while (true) {
+            if (introDbPrefs.conferenciaAutomatica() && !conferindoIntroDb && isNetworkAvailable(context)) {
+                conferindoIntroDb = true
+                val meuLote = ++loteAtual[0]
+                loteAutomatico = coroutineScope.launch { try {
+                    val agora = System.currentTimeMillis()
+                    val hoje = java.time.LocalDate.now()
+                    data class Pendente(val serieId: String, val temporada: Int, val ep: com.kalidorabr.bancodeminutagens.model.EpisodioItem, val conferidoEm: Long)
+                    val pendentes = seriesListState
+                        .filter { !it.isDeleted && !it.status.equals("Em breve", ignoreCase = true) }
+                        .sortedByDescending { it.lastUpdatedAt ?: 0L }
+                        .flatMap { s ->
+                            s.temporadas.flatMap { t ->
+                                val n = SerieProgressoUtils.numeroTemporada(t.numero)?.takeIf { it > 0 } ?: return@flatMap emptyList()
+                                t.episodios.mapNotNull { ep ->
+                                    val estreia = runCatching { java.time.LocalDate.parse(ep.dataExibicao.trim(), formatoBr) }.getOrNull()
+                                    if (estreia != null && estreia.isAfter(hoje)) return@mapNotNull null
+                                    val tipos = introDbPrefs.noSite(ep.id)
+                                    val quando = introDbPrefs.conferidoEm(ep.id)
+                                    val precisa = !introDbPrefs.conferido(ep.id) ||
+                                        (tipos.size < 3 && agora - quando > 24 * 60 * 60 * 1000L)
+                                    if (precisa) Pendente(s.id, n, ep, if (introDbPrefs.conferido(ep.id)) quando + 1 else 0L) else null
+                                }
+                            }
+                        }
+                        .sortedBy { it.conferidoEm }
+                        .take(30)
+                    val imdbs = mutableMapOf<String, String?>()
+                    for (p in pendentes) {
+                        val imdb = imdbs.getOrPut(p.serieId) { imdbDaSerie(p.serieId) } ?: continue
+                        val tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, p.temporada, p.ep.numero) ?: continue
+                        if (com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE in tipos) break
+                        introDbPrefs.salvarNoSite(p.ep.id, tipos)
+                        marcaIntroDb++
+                        delay(1_500)
+                    }
+                } finally {
+                    if (loteAtual[0] == meuLote) { conferindoIntroDb = false; loteAutomatico = null }
+                } }
+            }
+            delay(10 * 60_000L)
         }
     }
 
@@ -692,6 +824,9 @@ fun BancoDeMinutagensApp(
         var itens = novos.map { ItemProgressoIntroDb(it.rotulo, EstadoItemIntroDb.ESPERANDO) } +
             repetidos.map { ItemProgressoIntroDb(it.rotulo, EstadoItemIntroDb.JA_NO_SITE) } +
             plano.pulados.map { ItemProgressoIntroDb(it.rotulo, EstadoItemIntroDb.PULADO, it.motivo) }
+        // mostra na ordem dos episódios e das seções (Abertura, Recap, Encerramento)
+        val ordemSecao = listOf("Abertura", "Recap", "Encerramento")
+        itens = itens.sortedWith(compareBy({ it.rotulo.substringBefore(" ·") }, { ordemSecao.indexOf(it.rotulo.substringAfter("· ")) }))
         fun mostrar(etapa: String = "", terminado: Boolean = false, aviso: String? = null, abrir: Boolean = false) {
             // fechou o pop-up ("segundo plano")? continua enviando sem reabrir
             if (comPopup && (abrir || progressoIntroDb != null)) progressoIntroDb = ProgressoIntroDb(serie.titulo, itens, etapa, terminado, aviso)
@@ -711,7 +846,7 @@ fun BancoDeMinutagensApp(
                     return@launch
                 }
                 for ((i, item) in novos.withIndex()) {
-                    itens = itens.mapIndexed { k, it -> if (k == i) it.copy(estado = EstadoItemIntroDb.ENVIANDO) else it }
+                    itens = itens.map { if (it.rotulo == item.rotulo) it.copy(estado = EstadoItemIntroDb.ENVIANDO) else it }
                     mostrar("Enviando ${i + 1} de ${novos.size}…")
                     val estado = when (val r = com.kalidorabr.bancodeminutagens.data.IntroDbService.enviar(chaveIntroDb, imdb, item)) {
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.Ok -> {
@@ -729,7 +864,7 @@ fun BancoDeMinutagensApp(
                         is com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.Erro ->
                             ItemProgressoIntroDb(item.rotulo, EstadoItemIntroDb.ERRO, r.mensagem)
                     }
-                    itens = itens.mapIndexed { k, it -> if (k == i) estado else it }
+                    itens = itens.map { if (it.rotulo == item.rotulo) estado else it }
                     if (aviso != null) break
                     delay(600)
                 }
@@ -1038,6 +1173,8 @@ fun BancoDeMinutagensApp(
             }
         }
         atualizarESalvarSeries(novasSeries)
+        // leva os códigos para as colunas J e K da planilha
+        notificarAlteracaoUsuario(SyncOperation.SAVE_EPISODE)
     }
 
     fun salvarMinutagemFixa(
@@ -1486,9 +1623,18 @@ fun BancoDeMinutagensApp(
                     conferirAoAbrir = {
                         conferirNoIntroDb(activeSerie.id, soNaoConferidos = true, temporadaId = activeTemporada.id)
                     },
+                    temporadaAnterior = activeSerie.temporadas.getOrNull(activeSerie.temporadas.indexOf(activeTemporada) - 1)?.numero,
+                    temporadaProxima = activeSerie.temporadas.getOrNull(activeSerie.temporadas.indexOf(activeTemporada) + 1)?.numero,
+                    onTrocarTemporada = { passo ->
+                        activeSerie.temporadas.getOrNull(activeSerie.temporadas.indexOf(activeTemporada) + passo)?.let { selectedTemporadaId = it.id }
+                    },
                     onConferirIntroDb = {
                         avisoIntroDb = Triple("Conferindo no IntroDB…", activeSerie.titulo, TipoAvisoTemaA.ATENCAO)
-                        conferirNoIntroDb(activeSerie.id, soNaoConferidos = false) { n ->
+                        val titulo = activeSerie.titulo
+                        conferirNoIntroDb(activeSerie.id, soNaoConferidos = false, aoProgresso = { feitos, total ->
+                            val pct = if (total == 0) 0 else feitos * 100 / total
+                            avisoIntroDb = Triple("Conferindo no IntroDB… $pct%", "$titulo · $feitos de $total episódios", TipoAvisoTemaA.ATENCAO)
+                        }) { n ->
                             avisoIntroDb = Triple(
                                 if (n == 0) "Nada desta série no IntroDB ainda" else "$n episódio(s) já têm minutagem no IntroDB",
                                 "Eles aparecem com uma nuvem na temporada.", TipoAvisoTemaA.SUCESSO
@@ -1531,6 +1677,10 @@ fun BancoDeMinutagensApp(
                         coroutineScope.launch {
                             try {
                                 val atualizada = TmdbService.enriquecerSerieComTmdb(activeSerie)
+                                if (atualizada.imdbId != activeSerie.imdbId) {
+                                    introDbPrefs.esquecerConferencias(activeSerie.temporadas.flatMap { t -> t.episodios.map { it.id } })
+                                    marcaIntroDb++
+                                }
                                 atualizarESalvarSeries(seriesListState.map { if (it.id == atualizada.id) atualizada else it })
                             } catch (_: Exception) {
                                 currentFeedback = EpisodeFeedback.Error("Não foi possível sincronizar com o TMDB.")
@@ -1558,12 +1708,13 @@ fun BancoDeMinutagensApp(
                     abaInicial = if (acaoInicial == "com.kalidorabr.bancodeminutagens.BUSCAR") 1 else 0,
                     episodiosNovos = episodiosNovos,
                     versaoNova = versaoNova?.versao,
-                    onAtualizar = {
-                        versaoNova?.let { v ->
-                            runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(v.link))) }
-                        }
-                    },
+                    onAtualizar = { iniciarAtualizacao() },
                     onAtualizarDepois = { versaoNova = null },
+                    onProcurarAtualizacao = {
+                        com.kalidorabr.bancodeminutagens.data.Atualizacao.procurar(com.kalidorabr.bancodeminutagens.BuildConfig.VERSION_NAME)
+                            .onSuccess { if (it != null) versaoNova = it }
+                            .map { it?.versao }
+                    },
                     onAdicionarEpisodios = { novidade ->
                         val novas = seriesListState.map { s ->
                             if (s.id == novidade.serieId) {
@@ -1626,7 +1777,7 @@ fun BancoDeMinutagensApp(
                     visualMode = visualMode,
                     onVisualModeSelected = onVisualModeSelected,
                     onExportBackup = {
-                        pendingBackupExport = repository.criarBackup(seriesListState)
+                        pendingBackupExport = repository.criarBackup(seriesListState, novidadesPrefs.conclusoes())
                         backupExportLauncher.launch("banco-de-minutagens-backup.json")
                     },
                     onImportBackup = { backupImportLauncher.launch(arrayOf("application/json")) },
@@ -1763,6 +1914,12 @@ fun BancoDeMinutagensApp(
                         acao = if (tipo == TipoAvisoTemaA.ERRO) "OK" else null,
                         onAcao = { currentFeedback = EpisodeFeedback.None }
                     )
+                }
+                baixandoAtualizacao?.let { pct ->
+                    TelaAviso(titulo = "Baixando atualização… $pct%", subtitulo = "Versão ${versaoNova?.versao.orEmpty()}", tipo = TipoAvisoTemaA.ATENCAO)
+                }
+                if (baixandoAtualizacao == null) avisoAtualizacao?.let { texto ->
+                    TelaAviso(titulo = "Atualização", subtitulo = texto, tipo = TipoAvisoTemaA.ATENCAO, acao = "OK", onAcao = { avisoAtualizacao = null })
                 }
                 avisoIntroDb?.let { (titulo, sub, tipo) ->
                     TelaAviso(
@@ -1959,6 +2116,7 @@ fun HomeScreen(
     onComecarSerie: (SerieItem) -> Unit = {},
     abaInicial: Int = 0,
     versaoNova: String? = null,
+    onProcurarAtualizacao: suspend () -> Result<String?> = { Result.success(null) },
     onAtualizar: () -> Unit = {},
     onAtualizarDepois: () -> Unit = {},
     episodiosNovos: List<com.kalidorabr.bancodeminutagens.model.EpisodiosNovosSerie> = emptyList(),
@@ -2207,7 +2365,7 @@ fun HomeScreen(
                         }
                     )
                 } else if (showSobre) {
-                    TelaSobre(onBackClick = { showSobre = false })
+                    TelaSobre(onBackClick = { showSobre = false }, versaoNova = versaoNova, onProcurarAtualizacao = onProcurarAtualizacao, onAtualizar = onAtualizar)
                 } else if (showDadosBackup) {
                     val syncConfigTemaA = prefs.getConfig()
                     TelaDadosBackup(

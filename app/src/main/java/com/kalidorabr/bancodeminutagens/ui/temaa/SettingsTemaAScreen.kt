@@ -76,6 +76,7 @@ import com.kalidorabr.bancodeminutagens.ui.theme.AppThemeOpcao
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 // ---------- Ajustes ----------
 
@@ -393,8 +394,17 @@ fun SubtelaTemaA(
 // ---------- Sobre ----------
 
 @Composable
-fun SobreTemaAScreen(onBackClick: () -> Unit) {
+fun SobreTemaAScreen(
+    onBackClick: () -> Unit,
+    versaoNova: String? = null,
+    onProcurarAtualizacao: suspend () -> Result<String?> = { Result.success(null) },
+    onAtualizar: () -> Unit = {}
+) {
     val accent = MaterialTheme.colorScheme.primary
+    val escopo = androidx.compose.runtime.rememberCoroutineScope()
+    var procurando by remember { mutableStateOf(false) }
+    // null = ainda não procurou; depois guarda a frase do resultado
+    var resultado by remember { mutableStateOf<String?>(null) }
     var aberta by remember { mutableStateOf(historicoVersoesApp.firstOrNull { it.isAtual }?.versao) }
     val atual = historicoVersoesApp.firstOrNull { it.isAtual }
     SubtelaTemaA("", onBackClick) {
@@ -424,6 +434,27 @@ fun SobreTemaAScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.clip(CircleShape).background(TemaATokens.ErroFundo).padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
+            Spacer(Modifier.height(4.dp))
+            if (versaoNova != null) {
+                TemaAPrimaryButton(text = "Baixar versão $versaoNova", onClick = onAtualizar, modifier = Modifier.fillMaxWidth())
+            } else {
+                TemaAPrimaryButton(
+                    text = if (procurando) "Procurando…" else "Procurar atualização",
+                    enabled = !procurando,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        procurando = true
+                        escopo.launch {
+                            resultado = onProcurarAtualizacao().fold(
+                                onSuccess = { if (it == null) "Você já está na versão mais recente." else null },
+                                onFailure = { "Não deu para conferir agora. Veja a internet e tente de novo." }
+                            )
+                            procurando = false
+                        }
+                    }
+                )
+            }
+            resultado?.let { Text(it, color = TemaATokens.TextGray, fontSize = 13.sp) }
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Histórico de atualizações", color = TemaATokens.TextWhite, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)

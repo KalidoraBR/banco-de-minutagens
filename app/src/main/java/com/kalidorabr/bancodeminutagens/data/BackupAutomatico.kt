@@ -64,7 +64,7 @@ object BackupAutomatico {
     suspend fun fazer(ctx: Context): Boolean {
         val arvore = pasta(ctx) ?: return false
         val repo = SeriesRepository(ctx)
-        val conteudo = repo.criarBackup(repo.carregarSeries())
+        val conteudo = repo.criarBackup(repo.carregarSeries(), NovidadesPreferences(ctx).conclusoes())
         return runCatching {
             val cr = ctx.contentResolver
             val pai = DocumentsContract.buildDocumentUriUsingTree(arvore, DocumentsContract.getTreeDocumentId(arvore))

@@ -94,7 +94,8 @@ object TmdbService {
     suspend fun buscarDetalhesSerieCompleta(tmdbId: String): SerieItem = withContext(Dispatchers.IO) {
         if (BuildConfig.TMDB_READ_TOKEN.isBlank()) throw TmdbConfiguracaoAusenteException()
 
-        val detailJson = getJson("tv/$tmdbId")
+        val detailJson = getJson("tv/$tmdbId", mapOf("append_to_response" to "external_ids"))
+        val (imdbTmdb, tvdbTmdb) = codigosExternos(detailJson)
         val titulo = detailJson.text("name").ifBlank { detailJson.text("original_name").ifBlank { "Sem título" } }
         val anoStr = detailJson.text("first_air_date").take(4)
         val ano = anoStr.toIntOrNull() ?: 0
@@ -117,8 +118,8 @@ object TmdbService {
         }
         val generosText = generosList.joinToString(" • ").ifBlank { "Geral" }
 
-        val statusRaw = detailJson.text("status")
-        val statusText = if (statusRaw.contains("Ended", ignoreCase = true) || statusRaw.contains("Canceled", ignoreCase = true)) "Finalizada" else "Em andamento"
+        // O selo da série (Em andamento / Finalizada / Incompleta) é do usuário: não vem do status do TMDB
+        val statusText = "Em andamento"
 
         val seasonsArray = detailJson.optJSONArray("seasons")
         val temporadasList = mutableListOf<TemporadaItem>()
@@ -220,6 +221,8 @@ object TmdbService {
             posterUrl = posterUrl.ifEmpty { backdropUrl },
             sinopse = sinopse,
             identificadores = "IMDb • TVDB",
+            imdbId = imdbTmdb,
+            tvdbId = tvdbTmdb,
             aberturaAtiva = false,
             recapAtivo = false,
             encerramentoAtivo = false,
@@ -236,7 +239,8 @@ object TmdbService {
 
         try {
             val tmdbId = serieLocal.id
-            val detailJson = getJson("tv/$tmdbId")
+            val detailJson = getJson("tv/$tmdbId", mapOf("append_to_response" to "external_ids"))
+            val (imdbTmdb, tvdbTmdb) = codigosExternos(detailJson)
 
             val tituloTmdb = detailJson.text("name").ifBlank { detailJson.text("original_name") }
             val anoStr = detailJson.text("first_air_date").take(4)
@@ -354,6 +358,9 @@ object TmdbService {
                 imageUrl = backdropUrl.ifBlank { serieLocal.imageUrl },
                 sinopse = if (serieLocal.sinopse.startsWith("Série importada")) sinopseTmdb.ifBlank { serieLocal.sinopse } else serieLocal.sinopse.ifBlank { sinopseTmdb },
                 generos = if (serieLocal.generos == "Importada") generosText else serieLocal.generos.ifBlank { generosText },
+                // o TMDB é a referência: corrige código errado ou vazio (o IntroDB usa o do IMDb)
+                imdbId = imdbTmdb.ifBlank { serieLocal.imdbId },
+                tvdbId = tvdbTmdb.ifBlank { serieLocal.tvdbId },
                 temporadas = temporadasEnriquecidas
             )
         } catch (_: Exception) {
@@ -434,6 +441,14 @@ object TmdbService {
         } catch (_: Exception) {
             null
         }
+    }
+
+    /** Códigos do IMDb (tt…) e do TVDB vindos do TMDB ("" quando o TMDB não tem). */
+    private fun codigosExternos(detailJson: JSONObject): Pair<String, String> {
+        val ext = detailJson.optJSONObject("external_ids") ?: return "" to ""
+        val imdb = ext.text("imdb_id").takeIf { it.startsWith("tt") }.orEmpty()
+        val tvdb = if (ext.isNull("tvdb_id")) "" else ext.optLong("tvdb_id", 0L).takeIf { it > 0 }?.toString().orEmpty()
+        return imdb to tvdb
     }
 
     /** Código do IMDb da série (tt…), pelo TMDB. Só lê; null se não achar. */
