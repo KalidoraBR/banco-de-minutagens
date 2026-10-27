@@ -372,12 +372,17 @@ fun TelaGoogleSheets(
     modifier: Modifier = Modifier,
     seriesLocaisAtuais: List<SerieItem> = emptyList(),
     onImportSuccess: (List<SerieItem>) -> Unit = {},
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    chaveIntroDb: String = "",
+    onSalvarChaveIntroDb: (String) -> Unit = {},
+    autoIntroDb: Boolean = true,
+    onAutoIntroDbChange: (Boolean) -> Unit = {},
+    onConferirIntroDbAgora: () -> Unit = {}
 ) {
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> GoogleSheetsTemaBScreen(...)
-        else -> GoogleSheetsTemaAScreen(modifier = modifier, seriesLocaisAtuais = seriesLocaisAtuais, onImportSuccess = onImportSuccess, onBackClick = onBackClick)
+        else -> GoogleSheetsTemaAScreen(modifier = modifier, seriesLocaisAtuais = seriesLocaisAtuais, onImportSuccess = onImportSuccess, onBackClick = onBackClick, chaveIntroDb = chaveIntroDb, onSalvarChaveIntroDb = onSalvarChaveIntroDb, autoIntroDb = autoIntroDb, onAutoIntroDbChange = onAutoIntroDbChange, onConferirIntroDbAgora = onConferirIntroDbAgora)
     }
 }
 

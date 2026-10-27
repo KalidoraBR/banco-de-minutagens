@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -417,6 +418,44 @@ fun CartaoAtualizacao(versao: String, onAtualizar: () -> Unit, onDepois: () -> U
             "Atualizar", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.clip(CircleShape).background(accent)
                 .cliqueTemaA(vibrar = true, onClick = onAtualizar)
+                .padding(horizontal = 16.dp, vertical = 9.dp)
+        )
+    }
+}
+
+// ---------- Início: minutagem pronta no IntroDB ----------
+
+/** Episódios em que o IntroDB já tem tempos para seções ainda vazias aqui. "Abrir" leva ao primeiro deles. */
+@Composable
+fun CartaoIntroDbPronto(quantos: Int, serie: String, onAbrir: () -> Unit, onDepois: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = TemaATokens.SideMargin, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(TemaATokens.SuccessBg)
+            .padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Outlined.CloudDone, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                if (quantos == 1) "1 episódio pronto no IntroDB" else "$quantos episódios prontos no IntroDB",
+                color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(serie, color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                Text(
+                    "  ·  Depois", color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(onClick = onDepois).padding(vertical = 2.dp)
+                )
+            }
+        }
+        Text(
+            "Abrir", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.clip(CircleShape).background(TemaATokens.SemanticSuccess)
+                .cliqueTemaA(vibrar = true, onClick = onAbrir)
                 .padding(horizontal = 16.dp, vertical = 9.dp)
         )
     }

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
@@ -104,7 +105,6 @@ fun SettingsTemaAScreen(
     onBackupAutoChange: (Boolean) -> Unit = {}
 ) {
     var showInterface by remember { mutableStateOf(false) }
-    var showIntroDb by remember { mutableStateOf(false) }
     val accent = MaterialTheme.colorScheme.primary
 
     Box(modifier.fillMaxSize()) {
@@ -211,9 +211,8 @@ fun SettingsTemaAScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OverlineTemaA("Dados")
                 TemaAGroupCard {
-                    LinhaAjusteTemaA(Icons.Outlined.TableChart, "Google Sheets", "Importar, exportar e sincronizar", onClick = onGoogleSheetsClick)
-                    TemaAGroupDivider()
-                    LinhaAjusteTemaA(Icons.Outlined.CloudUpload, "IntroDB", "Envio ao introdb.app", if (chaveIntroDb.isBlank()) "Configurar" else "Conectado") { showIntroDb = true }
+                    // Google Sheets e IntroDB ficam juntos na tela Sincronização
+                    LinhaAjusteTemaA(Icons.Default.Sync, "Sincronização", "Google Sheets e IntroDB", onClick = onGoogleSheetsClick)
                     TemaAGroupDivider()
                     Row(
                         Modifier
@@ -247,35 +246,6 @@ fun SettingsTemaAScreen(
                     LinhaAjusteTemaA(Icons.Outlined.Info, "Sobre", "Versão e histórico de atualizações", onClick = onSobreClick)
                 }
             }
-        }
-
-        TemaABottomSheet(visible = showIntroDb, onDismiss = { showIntroDb = false }) {
-            var chave by remember(showIntroDb) { mutableStateOf(chaveIntroDb) }
-            TemaASheetHeader("Ajustes", "IntroDB", onClose = { showIntroDb = false })
-            Text(
-                "Crie uma chave no site introdb.app, em Conta, e cole aqui. Ela fica guardada só neste aparelho. Para enviar, use \"Enviar ao IntroDB\" no menu ⋮ da temporada.",
-                color = TemaATokens.TextGray, fontSize = 13.sp, lineHeight = 19.sp
-            )
-            CampoTemaA("Chave da API", chave, { chave = it.trim() }, placeholder = "idb_…", secreto = true)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(TemaATokens.DarkBackground)
-                    .clickable { onAutoIntroDbChange(!autoIntroDb) }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Enviar ao tocar em Concluir", color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Text("Só quando as três seções estiverem preenchidas", color = TemaATokens.TextGray, fontSize = 12.sp)
-                }
-                androidx.compose.material3.Switch(checked = autoIntroDb, onCheckedChange = onAutoIntroDbChange)
-            }
-            TemaAPrimaryButton("Salvar", onClick = {
-                onSalvarChaveIntroDb(chave)
-                showIntroDb = false
-            })
         }
 
         TemaABottomSheet(visible = showInterface, onDismiss = { showInterface = false }) {

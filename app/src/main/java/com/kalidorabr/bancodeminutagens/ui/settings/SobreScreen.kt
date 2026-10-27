@@ -62,9 +62,24 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.11",
+        data = "27/10/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "Nova tela Sincronização (Ajustes › Dados): Google Sheets e IntroDB juntos, cada um com sua barra de andamento.",
+            "IntroDB: a conferência começa assim que o app abre e também roda com o app fechado, em segundo plano; não precisa mais deixar o app aberto.",
+            "IntroDB: barra com porcentagem em tempo real (série, episódios conferidos e quantos têm minutagem) e botão \"Conferir agora\".",
+            "Novo aviso na Início: episódios que já têm minutagem pronta no IntroDB, com atalho para o primeiro.",
+            "Séries recém-adicionadas também são conferidas no IntroDB.",
+            "\"Enviar ao tocar em Concluir\" fica apagado enquanto não houver chave do IntroDB (a chave continua opcional para o resto).",
+            "Correção: a conferência de uma série sem código do IMDb não fica mais presa na tela; agora avisa o que falta.",
+            "Correção: o quadro da planilha só abre quando você toca em Editar conexão."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.10",
         data = "26/10/2026",
-        isAtual = true,
+        isAtual = false,
         alteracoes = listOf(
             "Atualização dentro do app: tocar em Atualizar baixa a versão nova com porcentagem e abre o instalador do Android, sem sair do app.",
             "Novo botão \"Procurar atualização\" em Ajustes › Sobre, e o aviso de versão nova também aparece ao voltar para o app.",

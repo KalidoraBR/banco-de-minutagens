@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,7 +78,12 @@ fun GoogleSheetsTemaAScreen(
     modifier: Modifier = Modifier,
     seriesLocaisAtuais: List<SerieItem> = emptyList(),
     onImportSuccess: (List<SerieItem>) -> Unit = {},
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    chaveIntroDb: String = "",
+    onSalvarChaveIntroDb: (String) -> Unit = {},
+    autoIntroDb: Boolean = true,
+    onAutoIntroDbChange: (Boolean) -> Unit = {},
+    onConferirIntroDbAgora: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val prefs = remember(context) { GoogleSheetsPreferences(context) }
@@ -327,17 +335,27 @@ fun GoogleSheetsTemaAScreen(
         }
     }
 
-    var showEditar by remember { mutableStateOf(!initialConfig.isConnectionValidated) }
+    // o quadro de conexão só abre ao tocar em "Editar conexão" (a tela também serve só para o IntroDB)
+    var showEditar by remember { mutableStateOf(false) }
+    var showChaveIntroDb by remember { mutableStateOf(false) }
     val accent = MaterialTheme.colorScheme.primary
     val config = remember(isSyncing, lastSyncStatus, isConnectionValidated, isTestingConnection) { prefs.getConfig() }
     var autoSync by remember(config) { mutableStateOf(config.isAutoSyncEnabled) }
 
     Box(modifier.fillMaxSize()) {
-        SubtelaTemaA("Google Sheets", onBackClick, acaoTopo = {
-            CircleIconButtonTemaA(onClick = { testErrorMessage = null; showEditar = true }) {
-                Icon(Icons.Outlined.Edit, "Editar conexão", tint = TemaATokens.TextWhite, modifier = Modifier.size(18.dp))
+        SubtelaTemaA("Sincronização", onBackClick) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OverlineTemaA("Google Sheets", Modifier.weight(1f))
+                Row(
+                    Modifier.clip(RoundedCornerShape(10.dp)).clickable { testErrorMessage = null; showEditar = true }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Edit, null, tint = TemaATokens.TextGray, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Editar conexão", color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
-        }) {
             // Estado da conexão
             Column(
                 Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
@@ -360,7 +378,7 @@ fun GoogleSheetsTemaAScreen(
                     Column(Modifier.weight(1f)) {
                         Text(if (isConnectionValidated) "Conectado" else "Não conectado", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            if (isConnectionValidated) "Planilha $masked · Script OK" else "Toque no lápis para configurar",
+                            if (isConnectionValidated) "Planilha $masked · Script OK" else "Toque em Editar conexão para configurar",
                             color = TemaATokens.TextGray, fontSize = 12.sp
                         )
                     }
@@ -427,12 +445,38 @@ fun GoogleSheetsTemaAScreen(
                 }
             }
             if (isSyncing) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(color = accent, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text("Sincronizando com a planilha…", color = TemaATokens.TextGray, fontSize = 13.sp)
+                // Google Sheets responde só no fim: a barra corre sem porcentagem
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                        color = accent, trackColor = TemaATokens.Track
+                    )
+                    Text("Sincronizando com a planilha…", color = TemaATokens.TextGray, fontSize = 12.sp)
                 }
             }
+
+            Spacer(Modifier.height(8.dp))
+            BlocoIntroDbTemaA(
+                chave = chaveIntroDb,
+                autoEnvio = autoIntroDb,
+                onAutoEnvioChange = onAutoIntroDbChange,
+                onEditarChave = { showChaveIntroDb = true },
+                onConferirAgora = onConferirIntroDbAgora
+            )
+        }
+
+        TemaABottomSheet(visible = showChaveIntroDb, onDismiss = { showChaveIntroDb = false }) {
+            var chave by remember(showChaveIntroDb) { mutableStateOf(chaveIntroDb) }
+            TemaASheetHeader("Sincronização", "Chave do IntroDB", onClose = { showChaveIntroDb = false })
+            Text(
+                "Crie uma chave no site introdb.app, em Conta, e cole aqui. Ela fica guardada só neste aparelho e serve para enviar minutagens. Conferir o que já está no site não precisa de chave.",
+                color = TemaATokens.TextGray, fontSize = 13.sp, lineHeight = 19.sp
+            )
+            CampoTemaA("Chave da API", chave, { chave = it.trim() }, placeholder = "idb_…", secreto = true)
+            TemaAPrimaryButton("Salvar", onClick = {
+                onSalvarChaveIntroDb(chave)
+                showChaveIntroDb = false
+            })
         }
 
         activeFeedback?.let { fb ->
@@ -450,10 +494,11 @@ fun GoogleSheetsTemaAScreen(
             )
         }
 
-        TemaABottomSheet(visible = showEditar, onDismiss = { if (isConnectionValidated) showEditar = false else onBackClick() }) {
+        // fechar sem conectar só fecha o quadro: a tela continua (o bloco do IntroDB não depende da planilha)
+        TemaABottomSheet(visible = showEditar, onDismiss = { showEditar = false }) {
             TemaASheetHeader("Google Sheets", if (isConnectionValidated) "Editar conexão" else "Conectar planilha", onClose = {
                 testErrorMessage = null
-                if (isConnectionValidated) showEditar = false else onBackClick()
+                showEditar = false
             })
             CampoTemaA("ID da planilha", spreadsheetId, { spreadsheetId = it.trim(); testErrorMessage = null }, placeholder = "1AbC…")
             CampoTemaA("URL do Apps Script", scriptUrl, { scriptUrl = it.trim(); testErrorMessage = null }, placeholder = "https://script.google.com/…/exec")
@@ -503,5 +548,129 @@ private fun AcaoSheetsTemaA(icon: ImageVector, titulo: String, enabled: Boolean,
         Spacer(Modifier.width(12.dp))
         Text(titulo, color = if (enabled) TemaATokens.TextWhite else TemaATokens.TextMuted, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = TemaATokens.TextMuted)
+    }
+}
+
+/** Bloco do IntroDB na tela Sincronização: conferência de todas as séries (com porcentagem), envio e chave. */
+@Composable
+private fun BlocoIntroDbTemaA(
+    chave: String,
+    autoEnvio: Boolean,
+    onAutoEnvioChange: (Boolean) -> Unit,
+    onEditarChave: () -> Unit,
+    onConferirAgora: () -> Unit
+) {
+    val context = LocalContext.current
+    val accent = MaterialTheme.colorScheme.primary
+    val introPrefs = remember(context) { com.kalidorabr.bancodeminutagens.data.IntroDbPreferences(context) }
+    val progresso by com.kalidorabr.bancodeminutagens.data.ConferenciaIntroDb.estado.collectAsState()
+    var autoConferencia by remember { mutableStateOf(introPrefs.conferenciaAutomatica()) }
+    // relê a hora da última conferência quando uma termina
+    val ultima = remember(progresso.rodando) { com.kalidorabr.bancodeminutagens.data.ConferenciaIntroDb.ultima(context) }
+    val fracao by androidx.compose.animation.core.animateFloatAsState(progresso.porcentagem / 100f, label = "conferenciaIntroDb")
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        OverlineTemaA("IntroDB")
+        Column(
+            Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    when {
+                        progresso.rodando -> "Conferindo no IntroDB… ${progresso.porcentagem}%"
+                        progresso.pausaDoSite -> "O site pediu uma pausa"
+                        else -> "Conferência do IntroDB"
+                    },
+                    color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold
+                )
+                Text(
+                    when {
+                        progresso.rodando && progresso.seriesTotal > 0 ->
+                            "Série ${progresso.serieIndice} de ${progresso.seriesTotal} · ${progresso.serieAtual}"
+                        progresso.rodando -> "Preparando…"
+                        progresso.pausaDoSite -> "Continua sozinha daqui a pouco"
+                        ultima > 0 -> "Última: ${tempoAtras(ultima)}"
+                        else -> "Ainda não conferido"
+                    },
+                    color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+            if (progresso.rodando) {
+                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(TemaATokens.Track)) {
+                    Box(Modifier.fillMaxWidth(fracao).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(accent))
+                }
+                Row {
+                    Text("${progresso.feitos} de ${progresso.total} episódios", color = TemaATokens.TextGray, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    Text(
+                        if (progresso.comDados == 1) "1 com minutagem" else "${progresso.comDados} com minutagem",
+                        color = TemaATokens.SuccessText, fontSize = 12.sp, fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                TemaASecondaryButton("Conferir agora", onConferirAgora, Modifier.fillMaxWidth())
+            }
+        }
+
+        TemaAGroup(Modifier.clip(TemaATokens.ShapeCardCommon)) {
+            LinhaChaveTemaA("Conferência automática", "Ao abrir o app e em segundo plano", autoConferencia, onChange = { on ->
+                autoConferencia = on
+                introPrefs.salvarConferenciaAutomatica(on)
+                com.kalidorabr.bancodeminutagens.data.ConferenciaIntroDb.agendar(context)
+            })
+            TemaAGroupDivider()
+            // sem chave não há como enviar: a opção fica apagada (a chave é opcional para todo o resto)
+            LinhaChaveTemaA(
+                "Enviar ao tocar em Concluir",
+                if (chave.isBlank()) "Configure a chave para usar" else "Só com as três seções preenchidas",
+                autoEnvio && chave.isNotBlank(),
+                onAutoEnvioChange,
+                habilitado = chave.isNotBlank()
+            )
+            TemaAGroupDivider()
+            Row(
+                Modifier.fillMaxWidth().clickable(onClick = onEditarChave).padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Chave do IntroDB", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("Para enviar minutagens", color = TemaATokens.TextGray, fontSize = 12.sp)
+                }
+                Text(
+                    if (chave.isBlank()) "Configurar" else "Conectado",
+                    color = if (chave.isBlank()) TemaATokens.SemanticWarning else TemaATokens.SuccessText,
+                    fontSize = 13.sp, fontWeight = FontWeight.Bold
+                )
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = TemaATokens.TextMuted)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LinhaChaveTemaA(titulo: String, legenda: String, ligado: Boolean, onChange: (Boolean) -> Unit, habilitado: Boolean = true) {
+    Row(
+        Modifier.fillMaxWidth().alpha(if (habilitado) 1f else 0.45f)
+            .clickable(enabled = habilitado) { onChange(!ligado) }.padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(titulo, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(legenda, color = TemaATokens.TextGray, fontSize = 12.sp)
+        }
+        Spacer(Modifier.width(12.dp))
+        TemaASwitch(ligado) { if (habilitado) onChange(it) }
+    }
+}
+
+/** "agora", "há 12 min", "há 3 h", "há 2 dias". */
+private fun tempoAtras(quando: Long): String {
+    val min = (System.currentTimeMillis() - quando) / 60_000L
+    return when {
+        min < 1 -> "agora"
+        min < 60 -> "há $min min"
+        min < 24 * 60 -> "há ${min / 60} h"
+        else -> "há ${min / (24 * 60)} dias"
     }
 }
