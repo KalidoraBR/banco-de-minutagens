@@ -1,5 +1,7 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -184,10 +186,11 @@ fun EstadoVazioTemaA(
     acao: String? = null,
     onAcao: () -> Unit = {}
 ) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     Column(
-        modifier.fillMaxSize().padding(horizontal = 40.dp).padding(bottom = 40.dp),
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 40.dp).padding(top = 8.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         com.kalidorabr.bancodeminutagens.ui.temas.IlustracaoClaquete()
         Text(titulo, color = TemaATokens.TextWhite, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
@@ -200,6 +203,7 @@ fun EstadoVazioTemaA(
                     .clickable(onClick = onAcao).padding(horizontal = 18.dp, vertical = 12.dp)
             )
         }
+    }
     }
 }
 

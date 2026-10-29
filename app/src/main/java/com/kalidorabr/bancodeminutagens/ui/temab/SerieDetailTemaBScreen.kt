@@ -250,7 +250,7 @@ fun SerieDetailTemaBScreen(
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(serie.status.ifBlank { "Em andamento" }.uppercase(), color = fg, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                        Text(com.kalidorabr.bancodeminutagens.model.StatusPlanilha.rotulo(serie.status).uppercase(), color = fg, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                         Icon(Icons.Filled.KeyboardArrowDown, null, tint = fg, modifier = Modifier.size(16.dp))
                     }
                     Box(

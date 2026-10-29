@@ -173,7 +173,8 @@ fun EpisodioDetailTemaAScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(nomeSerie, color = TemaATokens.TextGray, fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (dataExibicao.isNotBlank()) {
-                        Text("$dataExibicao  ·  ", color = TemaATokens.TextGray, fontSize = 12.sp)
+                        Text(dataExibicao, color = TemaATokens.TextGray, fontSize = 12.sp)
+                        Spacer(Modifier.width(8.dp))
                     }
                     SeloEpisodioTemaA(statusEpisodioLabel)
                 }
@@ -673,30 +674,50 @@ fun ColumnScope.EditarSecaoSheetContentTemaA(
     )
 }
 
-/** Cartão "Disponível no IntroDB": oferece os tempos de lá para as seções vazias. */
+/**
+ * Cartão "Disponível no IntroDB": oferece os tempos de lá para as seções vazias.
+ * [resumo]: uma linha por seção, "Nome<TAB>tempo" (ex.: "Abertura\t00:01 → 01:34").
+ */
 @Composable
 private fun CartaoIntroDbTemaA(resumo: String, onUsar: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
-    Row(
+    Column(
         Modifier
             .fillMaxWidth()
             .clip(TemaATokens.ShapeCardCommon)
             .background(TemaATokens.DarkGraphiteSurface)
             .border(1.dp, accent.copy(alpha = 0.35f), TemaATokens.ShapeCardCommon)
             .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Icon(Icons.Outlined.CloudDownload, null, tint = accent, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Disponível no IntroDB", color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
-            Text(resumo, color = TemaATokens.TextGray, fontSize = 12.sp, lineHeight = 16.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.CloudDownload, null, tint = accent, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("Disponível no IntroDB", color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            Text(
+                "Usar", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.clip(CircleShape).background(accent).clickable(onClick = onUsar).padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
-        Spacer(Modifier.width(10.dp))
-        Text(
-            "Usar", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.clip(CircleShape).background(accent).clickable(onClick = onUsar).padding(horizontal = 16.dp, vertical = 10.dp)
-        )
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(TemaATokens.DarkBackground)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            resumo.lines().filter { it.isNotBlank() }.forEach { linha ->
+                val nome = linha.substringBefore('\t')
+                val tempo = linha.substringAfter('\t', "")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(nome, color = TemaATokens.TextGray, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(
+                        tempo,
+                        color = if (tempo == "Não possui") TemaATokens.TextMuted else TemaATokens.TextWhite,
+                        fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        fontFamily = if (tempo == "Não possui") null else TemaATokens.FontMono
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -389,7 +389,7 @@ private fun SeloStatusTemaA(status: String, onClick: () -> Unit) {
         status.equals("Incompleta", true) -> TemaATokens.TextSoft to TemaATokens.Neutro
         else -> TemaATokens.SemanticWarning to TemaATokens.WarningBg
     }
-    SeloTemaA(status.ifBlank { "Em andamento" }, fg, bg, onClick)
+    SeloTemaA(com.kalidorabr.bancodeminutagens.model.StatusPlanilha.rotulo(status), fg, bg, onClick)
 }
 
 @Composable

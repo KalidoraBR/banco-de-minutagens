@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa.components
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.activity.compose.BackHandler
@@ -160,7 +161,7 @@ fun TemaABottomSheet(
 fun TemaASheetHeader(subtitle: String, title: String, onClose: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            if (subtitle.isNotBlank()) Text(subtitle, color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1)
+            if (subtitle.isNotBlank()) Text(subtitle, color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(title, color = TemaATokens.TextWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
         }
         Box(

@@ -84,7 +84,7 @@ fun ColumnScope.StatusSheetContentTemaA(
                 Box(Modifier.size(10.dp).clip(CircleShape).background(cor))
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    nome,
+                    com.kalidorabr.bancodeminutagens.model.StatusPlanilha.rotulo(nome),
                     modifier = Modifier.weight(1f),
                     color = if (on) accent else TemaATokens.TextWhite,
                     fontSize = 15.sp,

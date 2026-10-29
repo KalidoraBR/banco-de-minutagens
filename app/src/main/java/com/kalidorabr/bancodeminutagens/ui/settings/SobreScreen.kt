@@ -62,9 +62,23 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.12",
+        data = "29/10/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "IntroDB: a nuvem aparece no episódio logo depois do envio, e 5 segundos depois o app confere no site se foi publicado ou ficou em revisão.",
+            "Correção: \"Conferir agora\" volta a conferir de novo todas as séries (antes terminava na hora sem mostrar nada) e mostra \"Tudo em dia\" quando não há o que conferir.",
+            "TVDB pelo Wikidata: quando o TMDB não tem o código do TVDB, o app busca no Wikidata (só preenche o que está vazio, nunca troca o que você digitou).",
+            "Cartão \"Disponível no IntroDB\" no episódio reorganizado: uma linha por seção, com o tempo alinhado à direita.",
+            "Saiu o aviso de episódios prontos no IntroDB da Início.",
+            "Selo \"Em breve\" da série agora aparece como \"Não iniciada\", com a mesma cor em todas as telas (na planilha continua igual).",
+            "Ajustes de texto: botão \"Ver todas\" inteiro no Tema B, título na tela Sobre, \"Concluídos\" na temporada, dias da semana nas Estatísticas, separadores iguais e textos longos com \"…\"."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.11",
         data = "27/10/2026",
-        isAtual = true,
+        isAtual = false,
         alteracoes = listOf(
             "Nova tela Sincronização (Ajustes › Dados): Google Sheets e IntroDB juntos, cada um com sua barra de andamento.",
             "IntroDB: a conferência começa assim que o app abre e também roda com o app fechado, em segundo plano; não precisa mais deixar o app aberto.",

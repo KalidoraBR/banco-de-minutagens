@@ -358,8 +358,6 @@ fun BancoDeMinutagensApp(
         onDispose { donoCiclo.lifecycle.removeObserver(observador) }
     }
     var avisoEstreia by remember { mutableStateOf(novidadesPrefs.avisoEstreia()) }
-    // aviso "minutagem pronta no IntroDB" dispensado nesta abertura do app
-    var introDbProntosDispensado by remember { mutableStateOf(false) }
     var backupAutoPasta by remember { mutableStateOf(com.kalidorabr.bancodeminutagens.data.BackupAutomatico.nomePasta(context)) }
     val escolherPastaBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -597,6 +595,7 @@ fun BancoDeMinutagensApp(
         val seriesComDadosAusentes = seriesSalvas.filter { serie ->
             // duração dos episódios: busca uma vez por série
             !novidadesPrefs.codigosConferidos(serie.id) ||
+            (serie.tvdbId.isBlank() && !novidadesPrefs.wikidataConferido(serie.id)) ||
             (!novidadesPrefs.duracaoBuscada(serie.id) && serie.temporadas.any { t -> t.episodios.any { it.duracaoMin == 0 } }) ||
             serie.posterUrl.isBlank() ||
             serie.sinopse.startsWith("Série importada") ||
@@ -765,8 +764,14 @@ fun BancoDeMinutagensApp(
     // Conferência automática de todas as séries no IntroDB: começa assim que o app abre e repete a cada 10 min
     // enquanto ele está aberto; com o app fechado, o Android confere sozinho (ConferenciaIntroDbWorker).
     // A conferência manual de uma série tem preferência e interrompe o lote.
-    fun conferirTodasNoIntroDb(limite: Int = 60) {
-        if (conferindoIntroDb) return
+    fun conferirTodasNoIntroDb(limite: Int = 60, forcar: Boolean = false) {
+        if (conferindoIntroDb) {
+            // o lote automático já mostra a própria barra; outra conferência (de uma temporada ou envio) ganha um aviso
+            if (forcar && loteAutomatico == null) {
+                Toast.makeText(context, "Já tem uma conferência do IntroDB em andamento. Tente de novo em instantes.", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
         conferindoIntroDb = true
         val meuLote = ++loteAtual[0]
         loteAutomatico = coroutineScope.launch {
@@ -774,7 +779,8 @@ fun BancoDeMinutagensApp(
                 com.kalidorabr.bancodeminutagens.data.ConferenciaIntroDb.rodar(
                     context, seriesListState, limite,
                     imdbDe = { s -> imdbDaSerie(s.id) },
-                    aoConferir = { marcaIntroDb++ }
+                    aoConferir = { marcaIntroDb++ },
+                    forcar = forcar
                 )
             } finally {
                 if (loteAtual[0] == meuLote) { conferindoIntroDb = false; loteAutomatico = null }
@@ -834,6 +840,8 @@ fun BancoDeMinutagensApp(
                     val estado = when (val r = com.kalidorabr.bancodeminutagens.data.IntroDbService.enviar(chaveIntroDb, imdb, item)) {
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.Ok -> {
                             introDbPrefs.marcarEnviado(item)
+                            introDbPrefs.salvarNoSite(item.episodioId, introDbPrefs.noSite(item.episodioId) + item.segmentType)
+                            marcaIntroDb++
                             ItemProgressoIntroDb(item.rotulo, EstadoItemIntroDb.ENVIADO)
                         }
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.ChaveInvalida -> {
@@ -855,6 +863,19 @@ fun BancoDeMinutagensApp(
                 enviandoIntroDb = false
                 marcaIntroDb++
                 mostrar(terminado = true, aviso = aviso)
+                val enviados = novos.filter { n -> itens.any { it.rotulo == n.rotulo && it.estado == EstadoItemIntroDb.ENVIADO } }
+                if (enviados.isNotEmpty()) coroutineScope.launch {
+                    delay(5_000L)
+                    val imdb = imdbDaSerie(serie.id) ?: return@launch
+                    enviados.distinctBy { it.episodioId }.forEach { e ->
+                        val tipos = com.kalidorabr.bancodeminutagens.data.IntroDbService.consultar(imdb, e.temporada, e.episodio)
+                        if (tipos != null && com.kalidorabr.bancodeminutagens.data.IntroDbService.LIMITE !in tipos) {
+                            introDbPrefs.salvarNoSite(e.episodioId, tipos)
+                            marcaIntroDb++
+                        }
+                        delay(1_200L)
+                    }
+                }
                 if (!comPopup || progressoIntroDb == null) {
                     val ok = itens.count { it.estado == EstadoItemIntroDb.ENVIADO }
                     val problema = aviso
@@ -1548,10 +1569,10 @@ fun BancoDeMinutagensApp(
                             listOf(TipoMinutagem.ABERTURA to "Abertura", TipoMinutagem.RECAP to "Recap", TipoMinutagem.ENCERRAMENTO to "Encerramento")
                                 .filter { (tipo, _) -> activeEpisodio.minutagens.firstOrNull { it.tipo == tipo }?.estado != EstadoMinutagem.PREENCHIDO && activeEpisodio.minutagens.firstOrNull { it.tipo == tipo }?.estado != EstadoMinutagem.NAO_POSSUI }
                                 .mapNotNull { (tipo, nome) ->
-                                    t.secoes[tipo]?.let { (a, b) -> "$nome ${MinutagemSecao.formatSecondsToMmSs(a)} → ${MinutagemSecao.formatSecondsToMmSs(b)}" }
-                                        ?: if (tipo in t.naoPossui) "$nome: não possui" else null
+                                    t.secoes[tipo]?.let { (a, b) -> "$nome\t${MinutagemSecao.formatSecondsToMmSs(a)} → ${MinutagemSecao.formatSecondsToMmSs(b)}" }
+                                        ?: if (tipo in t.naoPossui) "$nome\tNão possui" else null
                                 }
-                                .joinToString(" · ")
+                                .joinToString("\n")
                         },
                     onUsarIntroDb = {
                         temposIntroDb?.takeIf { it.first == activeEpisodio.id }?.second?.let { t ->
@@ -1692,42 +1713,15 @@ fun BancoDeMinutagensApp(
                         System.currentTimeMillis(), referencia, adiadoAte, seriesListState.any { !it.isDeleted }
                     )
                 }
-                // Episódios em que o IntroDB tem uma seção que ainda está vazia aqui (dá para usar os tempos de lá)
-                val introDbProntos = remember(marcaIntroDb, seriesListState) {
-                    seriesListState.filterNot { it.isDeleted }.flatMap { s ->
-                        s.temporadas.flatMap { t ->
-                            t.episodios.sortedBy { it.numero }.filter { ep ->
-                                val noSite = introDbPrefs.noSite(ep.id)
-                                noSite.isNotEmpty() && ep.minutagens.any { sec ->
-                                    sec.estado == com.kalidorabr.bancodeminutagens.model.EstadoMinutagem.PENDENTE &&
-                                        when (sec.tipo) {
-                                            com.kalidorabr.bancodeminutagens.model.TipoMinutagem.ABERTURA -> "intro" in noSite
-                                            com.kalidorabr.bancodeminutagens.model.TipoMinutagem.RECAP -> "recap" in noSite
-                                            com.kalidorabr.bancodeminutagens.model.TipoMinutagem.ENCERRAMENTO -> "outro" in noSite
-                                        }
-                                }
-                            }.map { ep -> Triple(s, t, ep) }
-                        }
-                    }
-                }
+
                 HomeScreen(
                     seriesList = seriesListState,
                     abaInicial = if (acaoInicial == "com.kalidorabr.bancodeminutagens.BUSCAR") 1 else 0,
                     episodiosNovos = episodiosNovos,
                     versaoNova = versaoNova?.versao,
                     onAtualizar = { iniciarAtualizacao() },
-                    introDbProntos = if (introDbProntosDispensado) 0 else introDbProntos.size,
-                    introDbProntosSerie = introDbProntos.firstOrNull()?.first?.titulo.orEmpty(),
-                    onAbrirIntroDbPronto = {
-                        introDbProntos.firstOrNull()?.let { (s, t, ep) ->
-                            selectedSerieId = s.id
-                            selectedTemporadaId = t.id
-                            selectedEpisodioId = ep.id
-                        }
-                    },
-                    onDispensarIntroDbProntos = { introDbProntosDispensado = true },
                     // "Conferir agora" da tela Sincronização: todas as séries, sem limite de episódios
-                    onConferirIntroDbAgora = { conferirTodasNoIntroDb(limite = Int.MAX_VALUE) },
+                    onConferirIntroDbAgora = { conferirTodasNoIntroDb(limite = Int.MAX_VALUE, forcar = true) },
                     onAtualizarDepois = { versaoNova = null },
                     onProcurarAtualizacao = {
                         com.kalidorabr.bancodeminutagens.data.Atualizacao.procurar(com.kalidorabr.bancodeminutagens.BuildConfig.VERSION_NAME)
@@ -2137,10 +2131,6 @@ fun HomeScreen(
     versaoNova: String? = null,
     onProcurarAtualizacao: suspend () -> Result<String?> = { Result.success(null) },
     onConferirIntroDbAgora: () -> Unit = {},
-    introDbProntos: Int = 0,
-    introDbProntosSerie: String = "",
-    onAbrirIntroDbPronto: () -> Unit = {},
-    onDispensarIntroDbProntos: () -> Unit = {},
     onAtualizar: () -> Unit = {},
     onAtualizarDepois: () -> Unit = {},
     episodiosNovos: List<com.kalidorabr.bancodeminutagens.model.EpisodiosNovosSerie> = emptyList(),
@@ -2312,9 +2302,6 @@ fun HomeScreen(
         }
         if (searchQuery.isBlank() && versaoNova != null) {
             com.kalidorabr.bancodeminutagens.ui.temas.CartaoAtualizacao(versaoNova, onAtualizar, onAtualizarDepois)
-        }
-        if (searchQuery.isBlank() && introDbProntos > 0) {
-            com.kalidorabr.bancodeminutagens.ui.temas.CartaoIntroDbPronto(introDbProntos, introDbProntosSerie, onAbrirIntroDbPronto, onDispensarIntroDbProntos)
         }
         if (searchQuery.isBlank() && episodiosNovos.isNotEmpty()) {
             com.kalidorabr.bancodeminutagens.ui.temas.CartaoEpisodiosNovos(

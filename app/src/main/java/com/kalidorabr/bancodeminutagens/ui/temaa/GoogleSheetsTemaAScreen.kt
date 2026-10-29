@@ -590,6 +590,7 @@ private fun BlocoIntroDbTemaA(
                             "Série ${progresso.serieIndice} de ${progresso.seriesTotal} · ${progresso.serieAtual}"
                         progresso.rodando -> "Preparando…"
                         progresso.pausaDoSite -> "Continua sozinha daqui a pouco"
+                        progresso.nadaPendente && ultima > 0 -> "Tudo em dia · última: ${tempoAtras(ultima)}"
                         ultima > 0 -> "Última: ${tempoAtras(ultima)}"
                         else -> "Ainda não conferido"
                     },

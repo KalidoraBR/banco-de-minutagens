@@ -88,8 +88,14 @@ class NovidadesPreferences(context: Context) {
     fun codigosConferidos(serieId: String): Boolean = serieId in prefs.getStringSet(KEY_CODIGOS, emptySet()).orEmpty()
 
     fun marcarCodigosConferidos(serieId: String) {
-        prefs.edit { putStringSet(KEY_CODIGOS, prefs.getStringSet(KEY_CODIGOS, emptySet()).orEmpty() + serieId) }
+        prefs.edit {
+            putStringSet(KEY_CODIGOS, prefs.getStringSet(KEY_CODIGOS, emptySet()).orEmpty() + serieId)
+            putStringSet(KEY_WIKIDATA, prefs.getStringSet(KEY_WIKIDATA, emptySet()).orEmpty() + serieId)
+        }
     }
+
+    /** TVDB já procurado no Wikidata (uma vez por série sem TVDB, a partir da 1.12). */
+    fun wikidataConferido(serieId: String): Boolean = serieId in prefs.getStringSet(KEY_WIKIDATA, emptySet()).orEmpty()
 
     fun marcarDuracaoBuscada(serieId: String) {
         prefs.edit { putStringSet(KEY_DURACOES, prefs.getStringSet(KEY_DURACOES, emptySet()).orEmpty() + serieId) }
@@ -113,6 +119,7 @@ class NovidadesPreferences(context: Context) {
         const val KEY_ULTIMA_BUSCA_EPISODIOS = "ultima_busca_episodios"
         const val KEY_DISPENSADOS = "episodios_dispensados"
         const val KEY_CODIGOS = "codigos_conferidos"
+        const val KEY_WIKIDATA = "wikidata_conferido"
         const val KEY_CONCLUSOES = "conclusoes"
     }
 }

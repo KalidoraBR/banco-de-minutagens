@@ -30,7 +30,9 @@ data class ProgressoConferencia(
     val total: Int = 0,
     val comDados: Int = 0,
     /** Parou porque o site pediu pausa (continua na próxima vez). */
-    val pausaDoSite: Boolean = false
+    val pausaDoSite: Boolean = false,
+    /** A última conferência não achou nada para conferir (tudo em dia). */
+    val nadaPendente: Boolean = false
 ) {
     val porcentagem: Int get() = if (total == 0) 0 else feitos * 100 / total
 }
@@ -74,7 +76,8 @@ object ConferenciaIntroDb {
     fun pendentes(series: List<SerieItem>, prefs: IntroDbPreferences, agora: Long = System.currentTimeMillis()): Int =
         listaPendentes(series, prefs, agora).size
 
-    private fun listaPendentes(series: List<SerieItem>, prefs: IntroDbPreferences, agora: Long): List<Pendente> {
+    /** [forcar] = "Conferir agora": confere de novo tudo que ainda não tem as três seções, sem esperar 1 dia. */
+    private fun listaPendentes(series: List<SerieItem>, prefs: IntroDbPreferences, agora: Long, forcar: Boolean = false): List<Pendente> {
         val hoje = LocalDate.now()
         return series
             .filter { !it.isDeleted } // episódios que ainda não estrearam são pulados pela data, logo abaixo
@@ -87,7 +90,7 @@ object ConferenciaIntroDb {
                         if (estreia != null && estreia.isAfter(hoje)) return@mapNotNull null
                         val conferido = prefs.conferido(ep.id)
                         val quando = prefs.conferidoEm(ep.id)
-                        val precisa = !conferido || (prefs.noSite(ep.id).size < 3 && agora - quando > UM_DIA)
+                        val precisa = !conferido || (prefs.noSite(ep.id).size < 3 && (forcar || agora - quando > UM_DIA))
                         if (precisa) Pendente(s, n, ep.id, ep.numero, if (conferido) quando + 1 else 0L) else null
                     }
                 }
@@ -105,14 +108,15 @@ object ConferenciaIntroDb {
         series: List<SerieItem>,
         limite: Int = 60,
         imdbDe: suspend (SerieItem) -> String?,
-        aoConferir: () -> Unit = {}
+        aoConferir: () -> Unit = {},
+        forcar: Boolean = false
     ): Boolean {
         if (!trava.tryLock()) return false
         try {
             val prefs = IntroDbPreferences(ctx)
             // escolhe os mais urgentes e depois arruma série por série, para a barra andar em ordem
             val posicao = series.withIndex().associate { (i, s) -> s.id to i }
-            val lote = listaPendentes(series, prefs, System.currentTimeMillis()).take(limite)
+            val lote = listaPendentes(series, prefs, System.currentTimeMillis(), forcar).take(limite)
                 .sortedWith(compareBy({ posicao[it.serie.id] ?: 0 }, { it.temporada }, { it.episodio }))
             val ordemSeries = lote.map { it.serie.id }.distinct()
             var comDados = 0
@@ -142,7 +146,7 @@ object ConferenciaIntroDb {
                 delay(1_200)
             }
             ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putLong(KEY_ULTIMA, System.currentTimeMillis()) }
-            _estado.value = _estado.value.copy(rodando = false, pausaDoSite = pausa)
+            _estado.value = _estado.value.copy(rodando = false, pausaDoSite = pausa, nadaPendente = lote.isEmpty())
             return true
         } finally {
             if (_estado.value.rodando) _estado.value = _estado.value.copy(rodando = false)

@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.material.icons.outlined.CheckCircle
 import com.kalidorabr.bancodeminutagens.ui.temab.sangrarB
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -377,7 +378,7 @@ fun SobreTemaAScreen(
     var resultado by remember { mutableStateOf<String?>(null) }
     var aberta by remember { mutableStateOf(historicoVersoesApp.firstOrNull { it.isAtual }?.versao) }
     val atual = historicoVersoesApp.firstOrNull { it.isAtual }
-    SubtelaTemaA("", onBackClick) {
+    SubtelaTemaA("Sobre", onBackClick) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
                 Modifier
@@ -544,7 +545,7 @@ fun DadosBackupTemaAScreen(
                     Modifier.fillMaxWidth().clickable(enabled = problemas.isNotEmpty()) { verProblemas = !verProblemas }.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconeBolhaTemaA(Icons.Outlined.WarningAmber, problemas.isEmpty())
+                    IconeBolhaTemaA(if (problemas.isEmpty()) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber, problemas.isEmpty())
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(

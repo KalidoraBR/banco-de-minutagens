@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.foundation.layout.aspectRatio
@@ -72,7 +73,7 @@ import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAPrimaryButton
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASecondaryButton
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASheetColors
 
-private enum class FiltroEpTemaA(val label: String) { TODOS("Todos"), PENDENTES("Pendentes"), PARCIAIS("Parciais"), FEITOS("Feitos") }
+private enum class FiltroEpTemaA(val label: String) { TODOS("Todos"), PENDENTES("Pendentes"), PARCIAIS("Parciais"), FEITOS("Concluídos") }
 private enum class TemporadaSheetTemaA { LOTE, CONFIRMAR_LIMPAR, CONFIRMAR_INTRODB, SEM_CHAVE_INTRODB }
 
 @Composable
@@ -166,13 +167,14 @@ fun TemporadaDetailTemaAScreen(
                     )
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(nomeSerie, color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Text(nomeSerie, color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         if (selecionando) "Selecionar episódios" else nomeTemporada,
                         color = TemaATokens.TextWhite,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 CircleIconButtonTemaA(

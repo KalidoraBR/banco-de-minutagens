@@ -93,11 +93,11 @@ fun CabecalhoPaginaTemaA(
                 .height(36.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(titulo, color = TemaATokens.TextWhite, style = TemaATokens.TitleMain, modifier = Modifier.weight(1f), maxLines = 1)
+            Text(titulo, color = TemaATokens.TextWhite, style = TemaATokens.TitleMain, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             acao?.invoke()
         }
         if (subtitulo.isNotBlank()) {
-            Text(subtitulo, color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1)
+            Text(subtitulo, color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -288,7 +288,7 @@ fun ContinueCardTemaA(
                     )
                     val meta = listOfNotNull(
                         serie.ano.takeIf { it > 0 }?.toString(),
-                        serie.generos.replace(" / ", " · ").takeIf { it.isNotBlank() }
+                        serie.generos.replace(" / ", " · ").replace(" • ", " · ").takeIf { it.isNotBlank() }
                     ).joinToString(" · ")
                     if (meta.isNotBlank()) {
                         Text(meta, color = TemaATokens.TextSoft, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -339,7 +339,8 @@ fun StatusPillTemaA(serie: SerieItem, modifier: Modifier = Modifier, solid: Bool
     val (label, fg, bg) = when {
         serie.isFinalizada && !serie.isIncompleta -> Triple("Finalizada", TemaATokens.SuccessText, TemaATokens.SuccessBg)
         serie.isIncompleta -> Triple("Incompleta", TemaATokens.TextSoft, TemaATokens.DarkCardSurface)
-        else -> Triple(serie.status.ifBlank { "Em andamento" }, TemaATokens.SemanticWarning, TemaATokens.WarningBg)
+        serie.status.equals("Em breve", true) -> Triple(com.kalidorabr.bancodeminutagens.model.StatusPlanilha.rotulo(serie.status), TemaATokens.InfoTexto, TemaATokens.InfoFundo)
+        else -> Triple(com.kalidorabr.bancodeminutagens.model.StatusPlanilha.rotulo(serie.status), TemaATokens.SemanticWarning, TemaATokens.WarningBg)
     }
     Text(
         text = label,

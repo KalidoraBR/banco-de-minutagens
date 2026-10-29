@@ -14,7 +14,7 @@ enum class VisualMode(
 ) {
     // Lite foi removido na 1.7: fica escondido e quem usava passa a abrir no Tema A
     LITE("LITE", "Versão Lite", "Visual compacto, simples e com melhor desempenho.", pronto = false),
-    TEMA_A("TEMA_A", "Tema A", "Escuro minimalista, novo design do canvas."),
+    TEMA_A("TEMA_A", "Tema A", "Escuro e minimalista, com detalhes na cor de destaque."),
     TEMA_B("TEMA_B", "Tema B", "Claro e quente, cabeçalho escuro e cards brancos."),
     TEMA_C("TEMA_C", "Tema C", "Streaming: imagens grandes, grafite e vermelho."),
     TEMA_D("TEMA_D", "Tema D", "Neon roxo: anéis de progresso e brilho suave.");

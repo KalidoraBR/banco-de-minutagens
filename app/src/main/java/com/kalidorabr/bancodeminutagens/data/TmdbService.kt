@@ -95,7 +95,8 @@ object TmdbService {
         if (BuildConfig.TMDB_READ_TOKEN.isBlank()) throw TmdbConfiguracaoAusenteException()
 
         val detailJson = getJson("tv/$tmdbId", mapOf("append_to_response" to "external_ids"))
-        val (imdbTmdb, tvdbTmdb) = codigosExternos(detailJson)
+        val (imdbTmdb, tvdbSoTmdb) = codigosExternos(detailJson)
+        val tvdbTmdb = tvdbSoTmdb.ifBlank { tvdbPeloWikidata(detailJson) }
         val titulo = detailJson.text("name").ifBlank { detailJson.text("original_name").ifBlank { "Sem título" } }
         val anoStr = detailJson.text("first_air_date").take(4)
         val ano = anoStr.toIntOrNull() ?: 0
@@ -240,7 +241,8 @@ object TmdbService {
         try {
             val tmdbId = serieLocal.id
             val detailJson = getJson("tv/$tmdbId", mapOf("append_to_response" to "external_ids"))
-            val (imdbTmdb, tvdbTmdb) = codigosExternos(detailJson)
+            val (imdbTmdb, tvdbSoTmdb) = codigosExternos(detailJson)
+            val tvdbTmdb = tvdbSoTmdb.ifBlank { if (serieLocal.tvdbId.isBlank()) tvdbPeloWikidata(detailJson) else "" }
 
             val tituloTmdb = detailJson.text("name").ifBlank { detailJson.text("original_name") }
             val anoStr = detailJson.text("first_air_date").take(4)
@@ -450,6 +452,13 @@ object TmdbService {
         val tvdb = if (ext.isNull("tvdb_id")) "" else ext.optLong("tvdb_id", 0L).takeIf { it > 0 }?.toString().orEmpty()
         return imdb to tvdb
     }
+
+    /** TVDB pelo Wikidata, para quando o TMDB não tem (o TMDB informa qual é o item da série lá). */
+    private suspend fun tvdbPeloWikidata(detailJson: JSONObject): String =
+        detailJson.optJSONObject("external_ids")?.text("wikidata_id")
+            ?.takeIf { it.isNotBlank() }
+            ?.let { Wikidata.tvdbId(it) }
+            .orEmpty()
 
     /** Código do IMDb da série (tt…), pelo TMDB. Só lê; null se não achar. */
     suspend fun buscarImdbId(tmdbId: String): String? = withContext(Dispatchers.IO) {

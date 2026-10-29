@@ -177,7 +177,7 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
     SubtelaTemaA(titulo = "Estatísticas", onBackClick = onBackClick) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuadroNumero("Séries", "${est.totalSeries}", if (est.seriesFinalizadas == 1) "1 completa" else "${est.seriesFinalizadas} completas", Modifier.weight(1f), TemaATokens.SuccessText)
+            QuadroNumero("Séries", "${est.totalSeries}", if (est.seriesFinalizadas == 1) "1 completa" else "${est.seriesFinalizadas} completas", Modifier.weight(1f), if (est.seriesFinalizadas > 0) TemaATokens.SuccessText else TemaATokens.TextGray)
             QuadroNumero("Episódios minutados", "${est.episodiosConcluidos}", "de ${est.episodiosTotal} no total", Modifier.weight(1f))
         }
 
@@ -195,7 +195,8 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
             val maximo = (est.semana.maxOrNull() ?: 0).coerceAtLeast(1)
             val letras = remember {
                 val hoje = java.time.LocalDate.now()
-                (6 downTo 0).map { "DSTQQSS"[hoje.minusDays(it.toLong()).dayOfWeek.value % 7].toString() }
+                val nomes = listOf("dom", "seg", "ter", "qua", "qui", "sex", "sáb")
+                (6 downTo 0).map { nomes[hoje.minusDays(it.toLong()).dayOfWeek.value % 7] }
             }
             Row(Modifier.fillMaxWidth().height(110.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                 est.semana.forEachIndexed { i, qtd ->
@@ -213,7 +214,7 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
                 }
             }
             if (est.episodiosSemana == 0) {
-                Text("O gráfico começa a contar a partir desta versão: cada episódio que você completar aparece aqui.", color = TemaATokens.TextGray, fontSize = 12.sp, lineHeight = 17.sp)
+                Text("Nenhum episódio concluído nos últimos 7 dias. Cada episódio que você completar aparece aqui.", color = TemaATokens.TextGray, fontSize = 12.sp, lineHeight = 17.sp)
             }
         }
 
@@ -418,44 +419,6 @@ fun CartaoAtualizacao(versao: String, onAtualizar: () -> Unit, onDepois: () -> U
             "Atualizar", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.clip(CircleShape).background(accent)
                 .cliqueTemaA(vibrar = true, onClick = onAtualizar)
-                .padding(horizontal = 16.dp, vertical = 9.dp)
-        )
-    }
-}
-
-// ---------- Início: minutagem pronta no IntroDB ----------
-
-/** Episódios em que o IntroDB já tem tempos para seções ainda vazias aqui. "Abrir" leva ao primeiro deles. */
-@Composable
-fun CartaoIntroDbPronto(quantos: Int, serie: String, onAbrir: () -> Unit, onDepois: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier
-            .fillMaxWidth()
-            .padding(horizontal = TemaATokens.SideMargin, vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(TemaATokens.SuccessBg)
-            .padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Outlined.CloudDone, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                if (quantos == 1) "1 episódio pronto no IntroDB" else "$quantos episódios prontos no IntroDB",
-                color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(serie, color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                Text(
-                    "  ·  Depois", color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable(onClick = onDepois).padding(vertical = 2.dp)
-                )
-            }
-        }
-        Text(
-            "Abrir", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.clip(CircleShape).background(TemaATokens.SemanticSuccess)
-                .cliqueTemaA(vibrar = true, onClick = onAbrir)
                 .padding(horizontal = 16.dp, vertical = 9.dp)
         )
     }

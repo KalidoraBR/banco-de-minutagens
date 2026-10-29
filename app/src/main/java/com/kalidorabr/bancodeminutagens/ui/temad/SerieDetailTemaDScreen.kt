@@ -223,7 +223,7 @@ fun SerieDetailTemaDScreen(
 private fun corStatusD(status: String): Pair<Color, String> = when {
     status.equals("Finalizada", true) -> VerdeD to "Finalizada"
     status.equals("Incompleta", true) -> LilasD to "Incompleta"
-    status.equals("Em breve", true) -> Color(0xFF5B8CFF) to "Em breve"
+    status.equals("Em breve", true) -> Color(0xFF5B8CFF) to "Não iniciada"
     else -> AmareloD to status.ifBlank { "Em andamento" }
 }
 
