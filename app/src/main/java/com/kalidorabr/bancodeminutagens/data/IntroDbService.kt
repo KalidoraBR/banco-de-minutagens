@@ -51,6 +51,12 @@ class IntroDbPreferences(context: Context) {
 
     fun conferido(episodioId: String): Boolean = prefs.contains(KEY_NO_SITE + episodioId)
 
+    /** Algum trecho foi enviado (o site aceitou) mas a consulta ainda não mostra publicado: está em revisão. */
+    fun emRevisao(episodioId: String): Boolean {
+        val noSite = noSite(episodioId)
+        return listOf("intro", "recap", "outro").any { enviadoAntes(episodioId, it) != null && it !in noSite }
+    }
+
     fun salvarNoSite(episodioId: String, tipos: Set<String>) {
         prefs.edit {
             putStringSet(KEY_NO_SITE + episodioId, tipos)

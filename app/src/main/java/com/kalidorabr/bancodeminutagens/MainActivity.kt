@@ -1574,6 +1574,23 @@ fun BancoDeMinutagensApp(
                     rotuloProximo = episodiosOrdenados.getOrNull(currentIndex + 1)
                         ?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
                     duracaoEpisodioMin = activeEpisodio.duracaoMin,
+                    // Cartões do topo: só aparecem quando o episódio já tem alguma seção marcada
+                    statusPlanilha = run {
+                        val cfg = prefs.getConfig()
+                        val configurada = cfg.isConnectionValidated && cfg.scriptUrl.isNotBlank() && cfg.spreadsheetId.isNotBlank()
+                        if (!configurada || activeEpisodio.minutagens.all { it.estado == EstadoMinutagem.PENDENTE }) null
+                        else if (cfg.hasPendingExport) "Pendente" else "Sincronizado"
+                    },
+                    statusIntroDb = remember(marcaIntroDb, activeEpisodio) {
+                        val noSite = introDbPrefs.noSite(activeEpisodio.id)
+                        when {
+                            activeEpisodio.minutagens.all { it.estado == EstadoMinutagem.PENDENTE } -> null
+                            introDbPrefs.emRevisao(activeEpisodio.id) -> "Em revisão"
+                            noSite.isNotEmpty() -> "Publicado"
+                            chaveIntroDb.isNotBlank() -> "Não enviado"
+                            else -> null
+                        }
+                    },
                     introDbResumo = temposIntroDb?.takeIf { it.first == activeEpisodio.id }?.second
                         ?.takeIf { com.kalidorabr.bancodeminutagens.model.ImportarIntroDb.ajuda(activeEpisodio.minutagens, it) }
                         ?.let { t ->
@@ -1651,6 +1668,9 @@ fun BancoDeMinutagensApp(
                     temChaveIntroDb = chaveIntroDb.isNotBlank(),
                     noIntroDb = remember(marcaIntroDb, activeTemporada.episodios) {
                         activeTemporada.episodios.filter { introDbPrefs.noSite(it.id).isNotEmpty() }.map { it.id }.toSet()
+                    },
+                    emRevisaoIntroDb = remember(marcaIntroDb, activeTemporada.episodios) {
+                        activeTemporada.episodios.filter { introDbPrefs.emRevisao(it.id) }.map { it.id }.toSet()
                     },
                     conferirAoAbrir = {
                         conferirNoIntroDb(activeSerie.id, soNaoConferidos = true, temporadaId = activeTemporada.id)

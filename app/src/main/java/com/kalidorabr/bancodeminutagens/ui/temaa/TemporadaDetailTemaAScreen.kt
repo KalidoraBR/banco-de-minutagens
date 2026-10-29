@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -89,6 +90,7 @@ fun TemporadaDetailTemaAScreen(
     temChaveIntroDb: Boolean = false,
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
+    emRevisaoIntroDb: Set<String> = emptySet(),
     onConferirIntroDb: () -> Unit = {},
     temporadaAnterior: String? = null,
     temporadaProxima: String? = null,
@@ -310,7 +312,7 @@ fun TemporadaDetailTemaAScreen(
                     val sel = ep.id in selecionados
                     // Tema B: os episódios "caem" em sequência quando a temporada abre
                     val entrada = if ((TemaVisual.b || TemaVisual.d) && i < 42) Modifier.entradaB(120 + i * (if (TemaVisual.d) 28 else 18), 14.dp, quique = true) else Modifier
-                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb) {
+                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb, emRevisao = ep.id in emRevisaoIntroDb) {
                         if (selecionando) {
                             selecionados = if (sel) selecionados - ep.id else selecionados + ep.id
                         } else onEpisodioClick(ep)
@@ -481,7 +483,7 @@ private fun LegendaTemaA(texto: String, cor: Color?) {
 }
 
 @Composable
-private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, onClick: () -> Unit) {
+private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, onClick: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
     val shape = if (TemaVisual.d) CircleShape else RoundedCornerShape(12.dp)
     val (bg, fg) = when (ep.status) {
@@ -518,11 +520,14 @@ private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecio
             ) {
                 Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(10.dp))
             }
+        } else if (emRevisao) {
+            // nuvem azul com "!": enviado ao IntroDB, esperando a revisão do site
+            NuvemRevisaoTemaA(Modifier.align(Alignment.BottomEnd).padding(2.dp).size(15.dp))
         } else if (noSite) {
-            // nuvem pequena: este episódio já tem minutagem no IntroDB
+            // nuvem: este episódio já tem minutagem publicada no IntroDB
             Icon(
                 Icons.Outlined.CloudDone, "Já no IntroDB", tint = fg.copy(alpha = 0.8f),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(3.dp).size(11.dp)
+                modifier = Modifier.align(Alignment.BottomEnd).padding(2.dp).size(15.dp)
             )
         }
     }
@@ -715,5 +720,17 @@ private fun SeletorEpTemaA(
                 }
             }
         }
+    }
+}
+
+/** Azul-claro da nuvem "em revisão" (não usa amarelo, que já é o "parcial"). */
+val AzulRevisaoTemaA = Color(0xFF4CC9F0)
+
+/** Nuvem com "!" de "enviado ao IntroDB, em revisão". */
+@Composable
+fun NuvemRevisaoTemaA(modifier: Modifier = Modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Icon(Icons.Outlined.Cloud, "Em revisão no IntroDB", tint = AzulRevisaoTemaA, modifier = Modifier.fillMaxSize())
+        Text("!", color = AzulRevisaoTemaA, fontSize = 8.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
     }
 }

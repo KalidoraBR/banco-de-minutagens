@@ -62,9 +62,19 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
-        versao = "1.13",
+        versao = "1.14",
         data = "29/10/2026",
         isAtual = true,
+        alteracoes = listOf(
+            "Nova nuvem azul com \"!\" na temporada: o trecho foi enviado ao IntroDB e está esperando a revisão do site. Quando for aprovado, vira a nuvem normal sozinha.",
+            "Nuvem do IntroDB maior na grade de episódios.",
+            "No topo do episódio: cartões \"Planilha\" (Sincronizado ou Pendente) e \"IntroDB\" (Publicado, Em revisão ou Não enviado)."
+        )
+    ),
+    VersaoHistoricoItem(
+        versao = "1.13",
+        data = "29/10/2026",
+        isAtual = false,
         alteracoes = listOf(
             "IntroDB: a nuvem do episódio só aparece depois que o site confirma que o trecho está publicado.",
             "Apagar um trecho: no teclado, toque em Limpar no início e no fim e depois em Confirmar (cinza); só aquele trecho fica vazio.",

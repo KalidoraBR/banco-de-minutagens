@@ -1,5 +1,8 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.TableChart
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.cliqueTemaA
 import androidx.compose.material.icons.filled.Add
 import com.kalidorabr.bancodeminutagens.ui.temac.ambienteC
@@ -100,6 +103,8 @@ fun EpisodioDetailTemaAScreen(
     duracaoTipicaEditando: Int? = null,
     onConcluirClick: () -> Unit = onBackClick,
     introDbResumo: String? = null,
+    statusPlanilha: String? = null,
+    statusIntroDb: String? = null,
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
 ) {
@@ -187,6 +192,27 @@ fun EpisodioDetailTemaAScreen(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+
+            if (statusPlanilha != null || statusIntroDb != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (statusPlanilha != null) CartaoSincroniaTemaA(
+                        "Planilha", statusPlanilha, Icons.Outlined.TableChart,
+                        if (statusPlanilha == "Sincronizado") TemaATokens.SuccessText else TemaATokens.SemanticWarning,
+                        Modifier.weight(1f)
+                    )
+                    if (statusIntroDb != null) CartaoSincroniaTemaA(
+                        "IntroDB", statusIntroDb,
+                        if (statusIntroDb == "Publicado") Icons.Outlined.CloudDone else Icons.Outlined.Cloud,
+                        when (statusIntroDb) {
+                            "Publicado" -> TemaATokens.SuccessText
+                            "Em revisão" -> AzulRevisaoTemaA
+                            else -> TemaATokens.TextGray
+                        },
+                        Modifier.weight(1f),
+                        revisao = statusIntroDb == "Em revisão"
+                    )
+                }
             }
 
             val concluido = secoes.all { it.estado != EstadoMinutagem.PENDENTE }
@@ -755,6 +781,29 @@ private fun AvisoTempoTemaA(texto: String) {
             Text("Confira este tempo", color = TemaATokens.SemanticWarning, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             Text(texto, color = TemaATokens.TextWhite, fontSize = 12.sp, lineHeight = 17.sp)
             Text("Toque em \"Salvar assim\" se estiver certo.", color = TemaATokens.TextGray, fontSize = 11.sp)
+        }
+    }
+}
+
+/** Cartãozinho "Planilha · Sincronizado" / "IntroDB · Publicado" no topo do episódio. */
+@Composable
+private fun CartaoSincroniaTemaA(nome: String, estado: String, icone: androidx.compose.ui.graphics.vector.ImageVector, cor: Color, modifier: Modifier = Modifier, revisao: Boolean = false) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(TemaATokens.DarkGraphiteSurface)
+            .border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(16.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(34.dp).clip(CircleShape).background(cor.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            if (revisao) NuvemRevisaoTemaA(Modifier.size(19.dp))
+            else Icon(icone, null, tint = cor, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(nome, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+            Text(estado, color = cor, fontSize = 11.sp, maxLines = 1)
         }
     }
 }
