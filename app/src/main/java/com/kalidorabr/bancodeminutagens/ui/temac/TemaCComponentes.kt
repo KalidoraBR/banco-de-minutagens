@@ -228,7 +228,7 @@ fun ContinueCardTemaC(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            val meta = listOfNotNull(serie.ano.takeIf { it > 0 }?.toString(), serie.generos.replace(" / ", " · ").replace(" • ", " · ").takeIf { it.isNotBlank() }).joinToString(" · ")
+            val meta = listOfNotNull(serie.ano.takeIf { it > 0 }?.toString(), com.kalidorabr.bancodeminutagens.model.Generos.exibir(serie.generos).takeIf { it.isNotBlank() }).joinToString(" · ")
             if (meta.isNotBlank()) Text(meta, color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Row(

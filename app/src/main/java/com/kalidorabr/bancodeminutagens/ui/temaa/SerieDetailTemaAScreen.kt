@@ -277,7 +277,7 @@ fun SerieDetailTemaAScreen(
                             Icon(Icons.Filled.Refresh, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(14.dp))
                         }
                         Spacer(Modifier.width(6.dp))
-                        Text("Sincronizar TMDB", color = TemaATokens.TextSoft, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Atualizar episódios", color = TemaATokens.TextSoft, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 

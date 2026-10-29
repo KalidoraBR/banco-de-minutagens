@@ -384,6 +384,8 @@ fun BancoDeMinutagensApp(
     val introDbPrefs = remember(context) { com.kalidorabr.bancodeminutagens.data.IntroDbPreferences(context).also { it.refazerConferenciasUmaVez() } }
     var chaveIntroDb by remember { mutableStateOf(introDbPrefs.chave()) }
     var avisoIntroDb by remember { mutableStateOf<Triple<String, String, TipoAvisoTemaA>?>(null) }
+    // Pop-up "esse trecho já foi para o IntroDB, quer enviar de novo?"
+    var perguntaReenvio by remember { mutableStateOf<PerguntaReenvio?>(null) }
     var enviandoIntroDb by remember { mutableStateOf(false) }
     var progressoIntroDb by remember { mutableStateOf<ProgressoIntroDb?>(null) }
     var autoIntroDb by remember { mutableStateOf(introDbPrefs.automatico()) }
@@ -801,14 +803,17 @@ fun BancoDeMinutagensApp(
 
     // Envia ao IntroDB as seções com tempo dos episódios escolhidos (um por vez, com calma).
     // comPopup = envio manual (mostra o pop-up); sem = envio automático do Concluir (aviso discreto).
-    fun enviarAoIntroDb(serieId: String, temporadaId: String, episodioIds: Set<String>, comPopup: Boolean = true) {
+    fun enviarAoIntroDb(serieId: String, temporadaId: String, episodioIds: Set<String>, comPopup: Boolean = true, reenviar: Set<String> = emptySet()) {
         if (enviandoIntroDb || chaveIntroDb.isBlank()) return
         val serie = seriesListState.firstOrNull { it.id == serieId } ?: return
         val temporada = serie.temporadas.firstOrNull { it.id == temporadaId } ?: return
         val numero = SerieProgressoUtils.numeroTemporada(temporada.numero) ?: return
         val plano = com.kalidorabr.bancodeminutagens.model.IntroDbEnvio.planejar(numero, temporada.episodios.filter { it.id in episodioIds })
         // O que já está no site ou já foi enviado com os mesmos tempos não vai de novo
-        val (repetidos, novos) = plano.envios.partition { introDbPrefs.jaEnviado(it) || it.segmentType in introDbPrefs.noSite(it.episodioId) }
+        // ([reenviar]: rótulos que o usuário pediu para mandar de novo com o tempo corrigido)
+        val (repetidos, novos) = plano.envios.partition {
+            it.rotulo !in reenviar && (introDbPrefs.jaEnviado(it) || it.segmentType in introDbPrefs.noSite(it.episodioId))
+        }
         if (!comPopup && novos.isEmpty()) return
         var itens = novos.map { ItemProgressoIntroDb(it.rotulo, EstadoItemIntroDb.ESPERANDO) } +
             repetidos.map { ItemProgressoIntroDb(it.rotulo, EstadoItemIntroDb.JA_NO_SITE) } +
@@ -840,8 +845,6 @@ fun BancoDeMinutagensApp(
                     val estado = when (val r = com.kalidorabr.bancodeminutagens.data.IntroDbService.enviar(chaveIntroDb, imdb, item)) {
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.Ok -> {
                             introDbPrefs.marcarEnviado(item)
-                            introDbPrefs.salvarNoSite(item.episodioId, introDbPrefs.noSite(item.episodioId) + item.segmentType)
-                            marcaIntroDb++
                             ItemProgressoIntroDb(item.rotulo, EstadoItemIntroDb.ENVIADO)
                         }
                         com.kalidorabr.bancodeminutagens.data.RespostaIntroDb.ChaveInvalida -> {
@@ -1039,7 +1042,11 @@ fun BancoDeMinutagensApp(
                 temporadaId = temporadaId,
                 episodioId = episodioId,
                 backupMinutagens = minutagensAntes,
-                sourceLabel = when (novaSecao.tipo) {
+                sourceLabel = if (novaSecao.estado == EstadoMinutagem.PENDENTE) when (novaSecao.tipo) {
+                    TipoMinutagem.ABERTURA -> "Abertura apagada"
+                    TipoMinutagem.RECAP -> "Recap apagado"
+                    TipoMinutagem.ENCERRAMENTO -> "Encerramento apagado"
+                } else when (novaSecao.tipo) {
                     TipoMinutagem.ABERTURA -> "Abertura salva"
                     TipoMinutagem.RECAP -> "Recap salvo"
                     TipoMinutagem.ENCERRAMENTO -> "Encerramento salvo"
@@ -1533,7 +1540,11 @@ fun BancoDeMinutagensApp(
                     },
                     onProximoClick = {
                         if (hasProximo) {
-                            selectedEpisodioId = episodiosOrdenados[currentIndex + 1].id
+                            val seguintes = episodiosOrdenados.drop(currentIndex + 1)
+                            val pendente = seguintes.firstOrNull { ep ->
+                                ep.minutagens.count { it.estado != EstadoMinutagem.PENDENTE } < 3
+                            }
+                            selectedEpisodioId = (pendente ?: seguintes.first()).id
                         }
                     },
                     onSecaoClick = { secao ->
@@ -1590,7 +1601,24 @@ fun BancoDeMinutagensApp(
                         val completo = activeEpisodio.minutagens.count {
                             it.estado == EstadoMinutagem.PREENCHIDO || it.estado == EstadoMinutagem.NAO_POSSUI
                         } == 3
-                        if (autoIntroDb && completo) enviarAoIntroDb(activeSerie.id, activeTemporada.id, setOf(activeEpisodio.id), comPopup = false)
+                        // Trechos que já foram ao IntroDB e mudaram de tempo: pergunta se reenvia.
+                        // Trechos já enviados que foram apagados: o IntroDB não apaga, então só avisa.
+                        val numeroTemp = SerieProgressoUtils.numeroTemporada(activeTemporada.numero)
+                        val trocados = if (chaveIntroDb.isBlank() || numeroTemp == null) emptyList() else
+                            com.kalidorabr.bancodeminutagens.model.IntroDbEnvio.planejar(numeroTemp, listOf(activeEpisodio)).envios
+                                .filter { e -> introDbPrefs.enviadoAntes(e.episodioId, e.segmentType).let { it != null && it != "${e.inicioSeg}-${e.fimSeg}" } }
+                        val apagados = if (numeroTemp == null) emptyList() else activeEpisodio.minutagens
+                            .filter { it.estado == EstadoMinutagem.PENDENTE }
+                            .map { com.kalidorabr.bancodeminutagens.model.EnvioIntroDb(activeEpisodio.id, numeroTemp, activeEpisodio.numero, it.tipo, 0, 0) }
+                            .filter { introDbPrefs.enviadoAntes(it.episodioId, it.segmentType) != null }
+                        when {
+                            trocados.isNotEmpty() -> perguntaReenvio = PerguntaReenvio(activeSerie.id, activeTemporada.id, activeEpisodio.id, trocados.map { it.rotulo }.toSet())
+                            autoIntroDb && completo -> enviarAoIntroDb(activeSerie.id, activeTemporada.id, setOf(activeEpisodio.id), comPopup = false)
+                        }
+                        if (apagados.isNotEmpty()) {
+                            val nomes = apagados.joinToString(" e ") { it.rotulo.substringAfter("· ") }
+                            avisoIntroDb = Triple("$nomes continua no IntroDB", "O app não apaga lá. Para remover, corrija direto pelo site.", TipoAvisoTemaA.ATENCAO)
+                        }
                         // Modo maratona: segue para o próximo episódio; senão volta para a temporada
                         selectedEpisodioId = if (maratona && hasProximo) episodiosOrdenados[currentIndex + 1].id else null
                     },
@@ -1934,6 +1962,19 @@ fun BancoDeMinutagensApp(
                 if (baixandoAtualizacao == null) avisoAtualizacao?.let { texto ->
                     TelaAviso(titulo = "Atualização", subtitulo = texto, tipo = TipoAvisoTemaA.ATENCAO, acao = "OK", onAcao = { avisoAtualizacao = null })
                 }
+                perguntaReenvio?.let { p ->
+                    com.kalidorabr.bancodeminutagens.ui.temas.TelaPergunta(
+                        titulo = "Enviar de novo ao IntroDB?",
+                        texto = "${p.rotulos.joinToString(", ") { it.substringAfter("· ") }} já foi enviado com outro tempo. Quer mandar o tempo corrigido?",
+                        nao = "Não",
+                        sim = "Enviar",
+                        onNao = { perguntaReenvio = null },
+                        onSim = {
+                            perguntaReenvio = null
+                            enviarAoIntroDb(p.serieId, p.temporadaId, setOf(p.episodioId), comPopup = false, reenviar = p.rotulos)
+                        }
+                    )
+                }
                 avisoIntroDb?.let { (titulo, sub, tipo) ->
                     TelaAviso(
                         titulo = titulo,
@@ -1953,7 +1994,7 @@ fun BancoDeMinutagensApp(
                         acao = "Desfazer", onAcao = { desfazerPreenchimentoEmLote() }
                     )
                     pendingUndoCopyState != null -> TelaAviso(
-                        "${pendingUndoCopyState?.sourceLabel.orEmpty()} copiado", TipoAvisoTemaA.DESFAZER,
+                        pendingUndoCopyState?.sourceLabel.orEmpty().let { if (it.startsWith("Tempos")) "$it copiados" else "$it copiado" }, TipoAvisoTemaA.DESFAZER,
                         acao = "Desfazer", onAcao = { desfazerCopia() }
                     )
                     pendingUndoClearState != null -> TelaAviso(
@@ -2715,3 +2756,6 @@ fun criarSeriesIniciaisExemplo(): List<SerieItem> {
 
     return listOf(SerieProgressoUtils.recalcularProgressoSerie(digimon))
 }
+
+/** Trechos de um episódio que já foram ao IntroDB e mudaram de tempo (pergunta de reenvio). */
+data class PerguntaReenvio(val serieId: String, val temporadaId: String, val episodioId: String, val rotulos: Set<String>)

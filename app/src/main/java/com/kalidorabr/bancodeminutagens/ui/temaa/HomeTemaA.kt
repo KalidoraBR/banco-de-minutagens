@@ -288,7 +288,7 @@ fun ContinueCardTemaA(
                     )
                     val meta = listOfNotNull(
                         serie.ano.takeIf { it > 0 }?.toString(),
-                        serie.generos.replace(" / ", " · ").replace(" • ", " · ").takeIf { it.isNotBlank() }
+                        com.kalidorabr.bancodeminutagens.model.Generos.exibir(serie.generos).takeIf { it.isNotBlank() }
                     ).joinToString(" · ")
                     if (meta.isNotBlank()) {
                         Text(meta, color = TemaATokens.TextSoft, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

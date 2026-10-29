@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -185,7 +186,7 @@ fun SettingsTemaAScreen(
                             Text("Modo maratona", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             Text("Concluir abre o próximo episódio", color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         }
-                        androidx.compose.material3.Switch(checked = maratona, onCheckedChange = onMaratonaChange)
+                        com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASwitch(checked = maratona, onCheckedChange = onMaratonaChange)
                     }
                     TemaAGroupDivider()
                     Row(
@@ -204,7 +205,7 @@ fun SettingsTemaAScreen(
                             Text("Aviso de estreia", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             Text("Avisa no dia da estreia", color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         }
-                        androidx.compose.material3.Switch(checked = avisoEstreia, onCheckedChange = onAvisoEstreiaChange)
+                        com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASwitch(checked = avisoEstreia, onCheckedChange = onAvisoEstreiaChange)
                     }
                 }
             }
@@ -235,7 +236,7 @@ fun SettingsTemaAScreen(
                                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
-                        androidx.compose.material3.Switch(checked = backupAutoPasta != null, onCheckedChange = onBackupAutoChange)
+                        com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASwitch(checked = backupAutoPasta != null, onCheckedChange = onBackupAutoChange)
                     }
                     TemaAGroupDivider()
                     LinhaAjusteTemaA(Icons.Outlined.Storage, "Dados e backup", "Exportar ou restaurar tudo", onClick = onDadosBackupClick)
@@ -387,11 +388,17 @@ fun SobreTemaAScreen(
                     .background(TemaATokens.DarkGraphiteSurface),
                 contentAlignment = Alignment.Center
             ) {
-                // Mesmo desenho do ícone do app
+                // Mesmo desenho do ícone do app: fundo + desenho, ampliado como na tela inicial do celular
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(com.kalidorabr.bancodeminutagens.R.drawable.ic_launcher_background),
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(com.kalidorabr.bancodeminutagens.R.drawable.ic_launcher_bm_foreground),
                     contentDescription = "Ícone do Banco de Minutagens",
-                    modifier = Modifier.size(132.dp)
+                    modifier = androidx.compose.ui.Modifier.requiredSize(148.dp)
                 )
             }
             Text("Banco de Minutagens", color = TemaATokens.TextWhite, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)

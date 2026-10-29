@@ -247,7 +247,7 @@ private fun ResultadoBuscaTemaA(serie: TmdbSerieResultado, jaSalva: Boolean, adi
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(serie.titulo, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(listOf(serie.ano, serie.generos.replace(" • ", " · ")).filter { it.isNotBlank() }.joinToString(" · "), color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(listOf(serie.ano, com.kalidorabr.bancodeminutagens.model.Generos.exibir(serie.generos)).filter { it.isNotBlank() }.joinToString(" · "), color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (serie.descricao.isNotBlank()) {
                 Text(serie.descricao, color = TemaATokens.TextoCorpo, fontSize = 12.sp, lineHeight = 17.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }

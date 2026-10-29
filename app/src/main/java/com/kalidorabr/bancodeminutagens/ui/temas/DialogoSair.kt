@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temas
 
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -215,6 +216,53 @@ private fun SairTemaB(onFicar: () -> Unit, onSair: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text("SAIR", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.6.sp)
+            }
+        }
+    }
+}
+
+/** Pop-up central de pergunta com duas respostas (desenho do Tema A, em todos os temas). */
+@Composable
+fun TelaPergunta(titulo: String, texto: String, nao: String, sim: String, onNao: () -> Unit, onSim: () -> Unit) {
+    Dialog(onDismissRequest = onNao, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onNao),
+            contentAlignment = Alignment.Center
+        ) {
+            val accent = MaterialTheme.colorScheme.primary
+            Column(
+                Modifier
+                    .padding(horizontal = 28.dp)
+                    .widthIn(max = 380.dp)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(TemaATokens.DarkCardSurface)
+                    .padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.size(56.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.CloudUpload, null, tint = accent, modifier = Modifier.size(24.dp))
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(titulo, color = TemaATokens.TextWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(6.dp))
+                Text(texto, color = TemaATokens.TextGray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(22.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .cliqueTemaA(onClick = onNao)
+                            .height(TemaATokens.HeightPrimaryButton)
+                            .clip(TemaATokens.ShapePrimaryButton)
+                            .background(TemaATokens.Neutro),
+                        contentAlignment = Alignment.Center
+                    ) { Text(nao, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold) }
+                    com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAPrimaryButton(sim, onSim, Modifier.weight(1f))
+                }
             }
         }
     }

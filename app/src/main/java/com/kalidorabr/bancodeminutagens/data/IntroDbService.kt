@@ -30,6 +30,10 @@ class IntroDbPreferences(context: Context) {
     fun jaEnviado(item: EnvioIntroDb): Boolean =
         prefs.getString(KEY_ENVIADO + item.episodioId + "_" + item.segmentType, null) == "${item.inicioSeg}-${item.fimSeg}"
 
+    /** Tempos ("início-fim" em segundos) da última vez que este trecho foi enviado, ou null se nunca foi. */
+    fun enviadoAntes(episodioId: String, segmentType: String): String? =
+        prefs.getString(KEY_ENVIADO + episodioId + "_" + segmentType, null)
+
     fun marcarEnviado(item: EnvioIntroDb) {
         prefs.edit { putString(KEY_ENVIADO + item.episodioId + "_" + item.segmentType, "${item.inicioSeg}-${item.fimSeg}") }
     }

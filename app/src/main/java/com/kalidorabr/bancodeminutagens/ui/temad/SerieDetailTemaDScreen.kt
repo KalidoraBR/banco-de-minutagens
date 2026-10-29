@@ -139,7 +139,7 @@ fun SerieDetailTemaDScreen(
                     if (isSyncingTmdb) CircularProgressIndicator(Modifier.size(14.dp), color = CianoD, strokeWidth = 2.dp)
                     else Icon(Icons.Filled.Refresh, null, tint = CianoD, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Sincronizar TMDB", color = CianoD, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Atualizar episódios", color = CianoD, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             serie.temporadas.forEach { temp ->
@@ -177,6 +177,13 @@ fun SerieDetailTemaDScreen(
 
         // Continuar: botão redondo dentro do anel de progresso da série
         if (destino != null) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, TemaATokens.DarkBackground)))
+            )
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)

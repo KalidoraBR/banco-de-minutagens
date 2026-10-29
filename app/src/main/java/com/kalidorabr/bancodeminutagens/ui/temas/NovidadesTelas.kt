@@ -219,8 +219,8 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            QuadroNumero("Abertura média", est.aberturaMedia?.let(MinutagemSecao::formatSecondsToMmSs) ?: "--:--", null, Modifier.weight(1f), mono = true)
-            QuadroNumero("Encerramento médio", est.encerramentoMedio?.let(MinutagemSecao::formatSecondsToMmSs) ?: "--:--", null, Modifier.weight(1f), mono = true)
+            QuadroNumero("Abertura média", est.aberturaMedia?.let(MinutagemSecao::formatSecondsToMmSs) ?: "Sem dados", if (est.aberturaMedia == null) "Complete episódios" else null, Modifier.weight(1f), mono = est.aberturaMedia != null)
+            QuadroNumero("Encerramento médio", est.encerramentoMedio?.let(MinutagemSecao::formatSecondsToMmSs) ?: "Sem dados", if (est.encerramentoMedio == null) "Complete episódios" else null, Modifier.weight(1f), mono = est.encerramentoMedio != null)
         }
         QuadroNumero(
             "Dias seguidos minutando",
@@ -256,7 +256,7 @@ private fun QuadroNumero(rotulo: String, valor: String, detalhe: String?, modifi
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(rotulo, color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        Text(valor, color = TemaATokens.TextWhite, fontSize = if (mono) 22.sp else 26.sp, fontWeight = FontWeight.ExtraBold, fontFamily = if (mono) TemaATokens.FontMono else null)
+        Text(valor, color = TemaATokens.TextWhite, fontSize = if (valor == "Sem dados") 18.sp else if (mono) 22.sp else 26.sp, fontWeight = if (valor == "Sem dados") FontWeight.Bold else FontWeight.ExtraBold, fontFamily = if (mono) TemaATokens.FontMono else null)
         if (detalhe != null) Text(detalhe, color = corDetalhe, fontSize = 12.sp)
     }
 }

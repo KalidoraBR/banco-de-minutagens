@@ -62,9 +62,24 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
-        versao = "1.12",
+        versao = "1.13",
         data = "29/10/2026",
         isAtual = true,
+        alteracoes = listOf(
+            "IntroDB: a nuvem do episódio só aparece depois que o site confirma que o trecho está publicado.",
+            "Apagar um trecho: no teclado, toque em Limpar no início e no fim e depois em Confirmar (cinza); só aquele trecho fica vazio.",
+            "Trecho já enviado ao IntroDB que mudou de tempo: ao Concluir, o app pergunta se quer enviar de novo. Se foi apagado, avisa que lá continua e que é preciso corrigir pelo site.",
+            "\"Próximo\" no episódio pula para o próximo episódio que ainda falta.",
+            "Gêneros que o TMDB manda em inglês aparecem em português (ex.: \"Ação e Aventura\").",
+            "\"Sincronizar TMDB\" agora se chama \"Atualizar episódios\".",
+            "Estatísticas mostram \"Sem dados\" nas médias enquanto não há episódios completos.",
+            "Visual: ícone do app nítido na tela Sobre, botões liga/desliga claros no Tema B e faixa atrás do botão Continuar no Tema D."
+        )
+    ),
+    VersaoHistoricoItem(
+        versao = "1.12",
+        data = "29/10/2026",
+        isAtual = false,
         alteracoes = listOf(
             "IntroDB: a nuvem aparece no episódio logo depois do envio, e 5 segundos depois o app confere no site se foi publicado ou ficou em revisão.",
             "Correção: \"Conferir agora\" volta a conferir de novo todas as séries (antes terminava na hora sem mostrar nada) e mostra \"Tudo em dia\" quando não há o que conferir.",

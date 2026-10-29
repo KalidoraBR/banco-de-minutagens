@@ -548,6 +548,8 @@ fun ColumnScope.EditarSecaoSheetContentTemaA(
     val segundosValidos = segundosValidosTemaA(ini) && segundosValidosTemaA(fim)
     val dur = if (a != null && b != null && b > a) MinutagemSecao.formatSecondsToMmSs(b - a) else "--:--"
     val podeSalvar = naoPossui || (a != null && b != null && b >= a && segundosValidos)
+    // Apagou início e fim de um trecho que tinha tempo: Confirmar (cinza) deixa só esse trecho vazio
+    val limpando = !naoPossui && ini.isEmpty() && fim.isEmpty() && secao.estado != EstadoMinutagem.PENDENTE
 
     fun tecla(k: String) {
         if (naoPossui) return
@@ -555,6 +557,8 @@ fun ColumnScope.EditarSecaoSheetContentTemaA(
         if (campo == "ini") {
             val novo = teclaTempoTemaA(ini, k)
             ini = novo
+            // Limpar no início com minutagem fixa apaga o fim calculado junto
+            if (temFixa && k == "Limpar") fim = ""
             // Com minutagem fixa, o fim é calculado sozinho a partir do início.
             if (temFixa && novo.isNotEmpty() && segundosValidosTemaA(novo)) {
                 MinutagemSecao.somarTempos(fmt(novo), duracaoFixa)?.let { fim = digitosTempoTemaA(it) }
@@ -641,6 +645,19 @@ fun ColumnScope.EditarSecaoSheetContentTemaA(
     // Sem minutagem fixa: primeiro confirma o início ("Continuar"), depois o fim ("Salvar").
     // Com minutagem fixa o fim já vem calculado, então vai direto para "Salvar".
     val etapaInicio = !naoPossui && campo == "ini" && !(temFixa && fim.isNotEmpty())
+    if (limpando) {
+        Text("Início e fim vazios: confirmar deixa este trecho sem tempo.", color = TemaATokens.TextGray, fontSize = 12.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASecondaryButton("Cancelar", onClose, Modifier.weight(1f))
+            com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASecondaryButton("Confirmar", {
+                onSave(secao.copy(
+                    estado = EstadoMinutagem.PENDENTE, tempoInicio = "", tempoFim = "",
+                    isFilled = false, hasNot = false, confirmadaIndividualmente = false
+                ))
+            }, Modifier.weight(1f))
+        }
+        return
+    }
     BarraAcaoTemaA(
         confirmar = when {
             etapaInicio -> "Continuar"
