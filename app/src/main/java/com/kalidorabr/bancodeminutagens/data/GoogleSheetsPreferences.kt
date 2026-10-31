@@ -75,10 +75,20 @@ class GoogleSheetsPreferences(context: Context) {
         }
     }
 
-    fun setPendingExport(pending: Boolean) {
+    /** [limparEpisodios] = false quando nada foi de fato enviado à planilha (os episódios continuam pendentes). */
+    fun setPendingExport(pending: Boolean, limparEpisodios: Boolean = true) {
         prefs.edit {
             putBoolean(KEY_PENDING_EXPORT, pending)
+            if (!pending && limparEpisodios) remove(KEY_EPISODIOS_PENDENTES)
         }
+    }
+
+    /** Episódios alterados depois da última sincronização (cartão "Planilha" da tela do episódio). */
+    fun episodiosPendentes(): Set<String> = prefs.getStringSet(KEY_EPISODIOS_PENDENTES, emptySet()).orEmpty()
+
+    fun marcarEpisodiosPendentes(ids: Collection<String>) {
+        if (ids.isEmpty()) return
+        prefs.edit { putStringSet(KEY_EPISODIOS_PENDENTES, episodiosPendentes() + ids) }
     }
 
     fun getPermanentlyDeletedTmdbIds(): Set<String> {
@@ -169,7 +179,7 @@ class GoogleSheetsPreferences(context: Context) {
         }
         savePendingClearOperations(currentList)
         if (currentList.isEmpty()) {
-            setPendingExport(false)
+            setPendingExport(false, limparEpisodios = false)
         }
     }
 
@@ -222,6 +232,7 @@ class GoogleSheetsPreferences(context: Context) {
         private const val KEY_AUTO_SYNC_UNLOCKED = "auto_sync_unlocked"
         private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
         private const val KEY_PENDING_EXPORT = "pending_export"
+        private const val KEY_EPISODIOS_PENDENTES = "episodios_pendentes"
         private const val KEY_CONNECTION_VALIDATED = "connection_validated"
         private const val KEY_PERMANENTLY_DELETED_IDS = "permanently_deleted_ids"
         private const val KEY_PENDING_CLEAR_ITEMS = "pending_clear_items"

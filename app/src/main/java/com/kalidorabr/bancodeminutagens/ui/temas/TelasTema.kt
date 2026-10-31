@@ -309,13 +309,19 @@ fun TelaEpisodio(
     introDbResumo: String? = null,
     statusPlanilha: String? = null,
     statusIntroDb: String? = null,
+    onTocarPlanilha: () -> Unit = {},
+    onTocarIntroDb: () -> Unit = {},
+    temporadaCompleta: Boolean = false,
+    rotuloProximaTemporada: String = "",
+    onProximaTemporada: () -> Unit = {},
+    onIrProximoPendente: () -> Unit = {},
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
 ) {
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> EpisodioDetailTemaBScreen(...)
-        else -> EpisodioDetailTemaAScreen(nomeSerie = nomeSerie, temporadaLabel = temporadaLabel, numeroEpisodio = numeroEpisodio, tituloEpisodio = tituloEpisodio, dataExibicao = dataExibicao, statusEpisodioLabel = statusEpisodioLabel, minutagens = minutagens, isAnteriorEnabled = isAnteriorEnabled, isProximoEnabled = isProximoEnabled, isCopyEnabled = isCopyEnabled, copySourceLabel = copySourceLabel, onBackClick = onBackClick, onCopyClick = onCopyClick, onSecaoClick = onSecaoClick, onAnteriorClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = true; onAnteriorClick() }, onProximoClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = false; onProximoClick() }, secaoEditando = secaoEditando, duracaoFixaEditando = duracaoFixaEditando, onSaveSecao = onSaveSecao, onDismissEdit = onDismissEdit, minutagensAnterior = minutagensAnterior, rotuloAnterior = rotuloAnterior, rotuloProximo = rotuloProximo, duracaoTipicaEditando = duracaoTipicaEditando, onConcluirClick = onConcluirClick, introDbResumo = introDbResumo, statusPlanilha = statusPlanilha, statusIntroDb = statusIntroDb, onUsarIntroDb = onUsarIntroDb, duracaoEpisodioMin = duracaoEpisodioMin)
+        else -> EpisodioDetailTemaAScreen(nomeSerie = nomeSerie, temporadaLabel = temporadaLabel, numeroEpisodio = numeroEpisodio, tituloEpisodio = tituloEpisodio, dataExibicao = dataExibicao, statusEpisodioLabel = statusEpisodioLabel, minutagens = minutagens, isAnteriorEnabled = isAnteriorEnabled, isProximoEnabled = isProximoEnabled, isCopyEnabled = isCopyEnabled, copySourceLabel = copySourceLabel, onBackClick = onBackClick, onCopyClick = onCopyClick, onSecaoClick = onSecaoClick, onAnteriorClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = true; onAnteriorClick() }, onProximoClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = false; onProximoClick() }, secaoEditando = secaoEditando, duracaoFixaEditando = duracaoFixaEditando, onSaveSecao = onSaveSecao, onDismissEdit = onDismissEdit, minutagensAnterior = minutagensAnterior, rotuloAnterior = rotuloAnterior, rotuloProximo = rotuloProximo, duracaoTipicaEditando = duracaoTipicaEditando, onConcluirClick = onConcluirClick, introDbResumo = introDbResumo, statusPlanilha = statusPlanilha, statusIntroDb = statusIntroDb, onTocarPlanilha = onTocarPlanilha, onTocarIntroDb = onTocarIntroDb, temporadaCompleta = temporadaCompleta, rotuloProximaTemporada = rotuloProximaTemporada, onProximaTemporada = onProximaTemporada, onIrProximoPendente = onIrProximoPendente, onUsarIntroDb = onUsarIntroDb, duracaoEpisodioMin = duracaoEpisodioMin)
     }
 }
 

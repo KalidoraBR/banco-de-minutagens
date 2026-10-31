@@ -74,7 +74,7 @@ import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAPrimaryButton
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASecondaryButton
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASheetColors
 
-private enum class FiltroEpTemaA(val label: String) { TODOS("Todos"), PENDENTES("Pendentes"), PARCIAIS("Parciais"), FEITOS("Concluídos") }
+private enum class FiltroEpTemaA(val label: String) { TODOS("Todos"), PENDENTES("Pendentes"), PARCIAIS("Parciais"), FEITOS("Concluídos"), REVISAO("Em revisão") }
 private enum class TemporadaSheetTemaA { LOTE, CONFIRMAR_LIMPAR, CONFIRMAR_INTRODB, SEM_CHAVE_INTRODB }
 
 @Composable
@@ -121,6 +121,7 @@ fun TemporadaDetailTemaAScreen(
         FiltroEpTemaA.PENDENTES -> ordenados.filter { it.status == StatusEpisodio.PENDENTE || it.status == StatusEpisodio.PROXIMO }
         FiltroEpTemaA.PARCIAIS -> ordenados.filter { it.status == StatusEpisodio.PARCIAL }
         FiltroEpTemaA.FEITOS -> ordenados.filter { it.status == StatusEpisodio.CONCLUIDO }
+        FiltroEpTemaA.REVISAO -> ordenados.filter { it.id in emRevisaoIntroDb }
     }
 
     fun abrir(s: TemporadaSheetTemaA) {
@@ -258,7 +259,7 @@ fun TemporadaDetailTemaAScreen(
             if (TemaVisual.c) {
                 // Tema C: pílulas centralizadas; a escolhida fica branca
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
-                    FiltroEpTemaA.entries.forEach { f ->
+                    FiltroEpTemaA.entries.filter { it != FiltroEpTemaA.REVISAO }.forEach { f ->
                         val on = f == filtro
                         Box(
                             Modifier
@@ -279,7 +280,7 @@ fun TemporadaDetailTemaAScreen(
                     .then(if (TemaVisual.d) Modifier.border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(24.dp)) else Modifier)
                     .padding(4.dp)
             ) {
-                FiltroEpTemaA.entries.forEach { f ->
+                FiltroEpTemaA.entries.filter { it != FiltroEpTemaA.REVISAO }.forEach { f ->
                     val on = f == filtro
                     Box(
                         Modifier
@@ -297,6 +298,30 @@ fun TemporadaDetailTemaAScreen(
                             fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold
                         )
                     }
+                }
+            }
+
+            // Só aparece quando há episódios esperando a revisão do IntroDB
+            androidx.compose.runtime.LaunchedEffect(emRevisaoIntroDb.isEmpty()) {
+                if (emRevisaoIntroDb.isEmpty() && filtro == FiltroEpTemaA.REVISAO) filtro = FiltroEpTemaA.TODOS
+            }
+            if (emRevisaoIntroDb.isNotEmpty()) {
+                val on = filtro == FiltroEpTemaA.REVISAO
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(AzulRevisaoTemaA.copy(alpha = if (on) 0.28f else 0.12f))
+                        .clickable { filtro = if (on) FiltroEpTemaA.TODOS else FiltroEpTemaA.REVISAO }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NuvemRevisaoTemaA(Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Em revisão · ${emRevisaoIntroDb.count { id -> ordenados.any { it.id == id } }}",
+                        color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold
+                    )
                 }
             }
 
@@ -724,7 +749,7 @@ private fun SeletorEpTemaA(
 }
 
 /** Azul-claro da nuvem "em revisão" (não usa amarelo, que já é o "parcial"). */
-val AzulRevisaoTemaA = Color(0xFF4CC9F0)
+val AzulRevisaoTemaA: Color get() = if (TemaVisual.b) Color(0xFF0B7FA8) else Color(0xFF4CC9F0)
 
 /** Nuvem com "!" de "enviado ao IntroDB, em revisão". */
 @Composable

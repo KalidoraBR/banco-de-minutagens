@@ -437,12 +437,15 @@ fun BancoDeMinutagensApp(
         }
     }
 
+    var marcaSync by remember { mutableStateOf(0) }
+
     suspend fun executarAutoExportacao(
         operation: SyncOperation = SyncOperation.SAVE_EPISODE,
-        clearedCount: Int = 1
+        clearedCount: Int = 1,
+        forcar: Boolean = false
     ) {
         val config = prefs.getConfig()
-        if (!config.isAutoSyncUnlocked || !config.isAutoSyncEnabled) return
+        if (!forcar && (!config.isAutoSyncUnlocked || !config.isAutoSyncEnabled)) return
         if (config.scriptUrl.isBlank() || config.spreadsheetId.isBlank()) return
 
         if (isAutoSyncingNow) {
@@ -485,7 +488,7 @@ fun BancoDeMinutagensApp(
                     currentFeedback = EpisodeFeedback.EpisodesClearPending(clearedCount)
                     return
                 } else if (operation == SyncOperation.CLEAR_EPISODES) {
-                    prefs.setPendingExport(false)
+                    prefs.setPendingExport(false, limparEpisodios = false)
                     val dateFormat = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale.getDefault())
                     prefs.saveLastSync(dateFormat.format(Date()), "Sucesso")
                     currentFeedback = EpisodeFeedback.EpisodesClearedAndSynced(clearedCount)
@@ -525,6 +528,7 @@ fun BancoDeMinutagensApp(
             currentFeedback = EpisodeFeedback.Error("Erro ao sincronizar")
         } finally {
             isAutoSyncingNow = false
+            marcaSync++
             if (pendingChangesWhileSyncing) {
                 pendingChangesWhileSyncing = false
                 coroutineScope.launch {
@@ -550,7 +554,7 @@ fun BancoDeMinutagensApp(
                 executarAutoExportacao(operation)
             }
         } else {
-            prefs.setPendingExport(false)
+            prefs.setPendingExport(false, limparEpisodios = false)
             currentFeedback = if (operation == SyncOperation.CLEAR_EPISODES) {
                 EpisodeFeedback.EpisodesClearedSuccess(1)
             } else {
@@ -695,6 +699,11 @@ fun BancoDeMinutagensApp(
                 SerieProgressoUtils.aplicarStatusAutomatico(nova)
             } else nova
         }
+        // Cartão "Planilha": guarda quais episódios mudaram desde a última sincronização
+        prefs.marcarEpisodiosPendentes(novasSeries.flatMap { nova ->
+            val antes = anteriores[nova.id]?.temporadas?.flatMap { it.episodios }?.associateBy { it.id } ?: return@flatMap emptyList()
+            nova.temporadas.flatMap { it.episodios }.filter { ep -> antes[ep.id]?.let { it.minutagens != ep.minutagens } == true }.map { it.id }
+        })
         seriesListState = novasSeries
         coroutineScope.launch {
             repository.salvarSeries(novasSeries)
@@ -1498,6 +1507,11 @@ fun BancoDeMinutagensApp(
 
                 val hasAnterior = currentIndex > 0
                 val hasProximo = currentIndex >= 0 && currentIndex < episodiosOrdenados.size - 1
+                val faltaMinutar = { ep: EpisodioItem -> ep.minutagens.count { it.estado != EstadoMinutagem.PENDENTE } < 3 }
+                // O que ainda falta: primeiro depois deste episódio, senão os que ficaram para trás
+                val proximoPendente = episodiosOrdenados.drop(currentIndex + 1).firstOrNull(faltaMinutar)
+                    ?: episodiosOrdenados.take(currentIndex.coerceAtLeast(0)).firstOrNull(faltaMinutar)
+                val proximaTemporada = activeSerie.temporadas.getOrNull(activeSerie.temporadas.indexOf(activeTemporada) + 1)
                 val episodioAnterior = episodiosOrdenados.getOrNull(currentIndex - 1)
                 val podeCopiarAnterior = episodioAnterior?.minutagens?.any { secao ->
                     secao.estado != EstadoMinutagem.PENDENTE ||
@@ -1571,16 +1585,33 @@ fun BancoDeMinutagensApp(
                     onDismissEdit = { selectedSecaoTipo = null },
                     minutagensAnterior = episodioAnterior?.minutagens.orEmpty(),
                     rotuloAnterior = episodioAnterior?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
-                    rotuloProximo = episodiosOrdenados.getOrNull(currentIndex + 1)
-                        ?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
+                    rotuloProximo = proximoPendente?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
+                    onIrProximoPendente = { proximoPendente?.let { selectedEpisodioId = it.id } },
+                    temporadaCompleta = episodiosOrdenados.none(faltaMinutar),
+                    rotuloProximaTemporada = proximaTemporada?.let { t ->
+                        SerieProgressoUtils.numeroTemporada(t.numero)?.let { "T" + it.toString().padStart(2, '0') } ?: t.numero
+                    }.orEmpty(),
+                    onProximaTemporada = {
+                        proximaTemporada?.let {
+                            selectedEpisodioId = null
+                            selectedTemporadaId = it.id
+                        }
+                    },
                     duracaoEpisodioMin = activeEpisodio.duracaoMin,
                     // Cartões do topo: só aparecem quando o episódio já tem alguma seção marcada
                     statusPlanilha = run {
                         val cfg = prefs.getConfig()
                         val configurada = cfg.isConnectionValidated && cfg.scriptUrl.isNotBlank() && cfg.spreadsheetId.isNotBlank()
                         if (!configurada || activeEpisodio.minutagens.all { it.estado == EstadoMinutagem.PENDENTE }) null
-                        else if (cfg.hasPendingExport) "Pendente" else "Sincronizado"
+                        else {
+                            marcaSync
+                            val pendentes = prefs.episodiosPendentes()
+                            // sem lista (mudança feita antes desta versão): vale o aviso geral
+                            if (activeEpisodio.id in pendentes || (pendentes.isEmpty() && cfg.hasPendingExport)) "Pendente" else "Sincronizado"
+                        }
                     },
+                    onTocarPlanilha = { coroutineScope.launch { executarAutoExportacao(forcar = true) } },
+                    onTocarIntroDb = { enviarAoIntroDb(activeSerie.id, activeTemporada.id, setOf(activeEpisodio.id)) },
                     statusIntroDb = remember(marcaIntroDb, activeEpisodio) {
                         val noSite = introDbPrefs.noSite(activeEpisodio.id)
                         when {

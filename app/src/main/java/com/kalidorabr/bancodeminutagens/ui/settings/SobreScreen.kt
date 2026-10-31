@@ -62,9 +62,22 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.15",
+        data = "31/10/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "Temporada completa: ao terminar o último episódio que faltava, o app avisa e oferece ir para a temporada seguinte.",
+            "O botão da faixa verde leva ao episódio que ainda falta, mesmo que tenha ficado para trás.",
+            "Cartão \"Planilha\" por episódio: só fica \"Pendente\" o episódio alterado depois da última sincronização.",
+            "Cartões do episódio viram atalho: tocar em \"Pendente\" sincroniza a planilha e tocar em \"Não enviado\" envia ao IntroDB.",
+            "Novo filtro \"Em revisão\" na temporada, que aparece quando há episódios esperando a revisão do IntroDB.",
+            "Pop-up de reenvio ao IntroDB com o desenho de cada tema."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.14",
         data = "29/10/2026",
-        isAtual = true,
+        isAtual = false,
         alteracoes = listOf(
             "Nova nuvem azul com \"!\" na temporada: o trecho foi enviado ao IntroDB e está esperando a revisão do site. Quando for aprovado, vira a nuvem normal sozinha.",
             "Nuvem do IntroDB maior na grade de episódios.",

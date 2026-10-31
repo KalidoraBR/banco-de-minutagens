@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -221,7 +222,7 @@ private fun SairTemaB(onFicar: () -> Unit, onSair: () -> Unit) {
     }
 }
 
-/** Pop-up central de pergunta com duas respostas (desenho do Tema A, em todos os temas). */
+/** Pop-up central de pergunta com duas respostas, no desenho do tema. */
 @Composable
 fun TelaPergunta(titulo: String, texto: String, nao: String, sim: String, onNao: () -> Unit, onSim: () -> Unit) {
     Dialog(onDismissRequest = onNao, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -231,39 +232,128 @@ fun TelaPergunta(titulo: String, texto: String, nao: String, sim: String, onNao:
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onNao),
             contentAlignment = Alignment.Center
         ) {
-            val accent = MaterialTheme.colorScheme.primary
-            Column(
+            Box(
                 Modifier
                     .padding(horizontal = 28.dp)
                     .widthIn(max = 380.dp)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(TemaATokens.DarkCardSurface)
-                    .padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(Modifier.size(56.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.CloudUpload, null, tint = accent, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.height(16.dp))
-                Text(titulo, color = TemaATokens.TextWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(6.dp))
-                Text(texto, color = TemaATokens.TextGray, fontSize = 14.sp, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(22.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .cliqueTemaA(onClick = onNao)
-                            .height(TemaATokens.HeightPrimaryButton)
-                            .clip(TemaATokens.ShapePrimaryButton)
-                            .background(TemaATokens.Neutro),
-                        contentAlignment = Alignment.Center
-                    ) { Text(nao, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold) }
-                    com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAPrimaryButton(sim, onSim, Modifier.weight(1f))
+                when (val modo = LocalModoVisual.current) {
+                    VisualMode.TEMA_B -> PerguntaTemaB(titulo, texto, nao, sim, onNao, onSim)
+                    else -> PerguntaEscura(modo, titulo, texto, nao, sim, onNao, onSim)
                 }
             }
+        }
+    }
+}
+
+/** Temas A, C e D: cartão escuro. C com botões em pílula; D com borda fina e cantos bem redondos. */
+@Composable
+private fun PerguntaEscura(modo: VisualMode, titulo: String, texto: String, nao: String, sim: String, onNao: () -> Unit, onSim: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    val p = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { p.animateTo(1f, tween(260, easing = EasingTemaA)) }
+    val d = modo == VisualMode.TEMA_D
+    val c = modo == VisualMode.TEMA_C
+    val forma = RoundedCornerShape(if (d) 32.dp else 26.dp)
+    val formaBotao = if (c || d) RoundedCornerShape(50) else TemaATokens.ShapePrimaryButton
+    Column(
+        Modifier
+            .graphicsLayer {
+                alpha = p.value
+                val s = 0.92f + 0.08f * p.value
+                scaleX = s; scaleY = s
+            }
+            .fillMaxWidth()
+            .clip(forma)
+            .background(TemaATokens.DarkCardSurface)
+            .then(if (d) Modifier.border(1.dp, accent.copy(alpha = 0.5f), forma) else Modifier)
+            .padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(Modifier.size(56.dp).clip(CircleShape).background(accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.CloudUpload, null, tint = accent, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(titulo, color = TemaATokens.TextWhite, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(6.dp))
+        Text(texto, color = TemaATokens.TextGray, fontSize = 14.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(22.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier
+                    .weight(1f)
+                    .cliqueTemaA(onClick = onNao)
+                    .height(TemaATokens.HeightPrimaryButton)
+                    .clip(formaBotao)
+                    .background(TemaATokens.Neutro),
+                contentAlignment = Alignment.Center
+            ) { Text(nao, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold) }
+            Box(
+                Modifier
+                    .weight(1f)
+                    .cliqueTemaA(onClick = onSim)
+                    .height(TemaATokens.HeightPrimaryButton)
+                    .clip(formaBotao)
+                    .background(if (c) Color.White else accent),
+                contentAlignment = Alignment.Center
+            ) { Text(sim, color = if (c) Color(0xFF111111) else Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold) }
+        }
+    }
+}
+
+/** Tema B: cartão claro com faixa escura de base curva no topo, como o "Sair do app?". */
+@Composable
+private fun PerguntaTemaB(titulo: String, texto: String, nao: String, sim: String, onNao: () -> Unit, onSim: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    val p = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { p.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 420f)) }
+    val sobe = with(LocalDensity.current) { 40.dp.toPx() }
+    Column(
+        Modifier
+            .graphicsLayer {
+                alpha = p.value.coerceIn(0f, 1f)
+                translationY = (1f - p.value) * sobe
+            }
+            .fillMaxWidth()
+            .shadow(24.dp, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .background(TemaATokens.DarkBackground)
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(BaseCurvaB(18.dp))
+                .background(EscuroCabecalhoB)
+                .padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(accent), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.CloudUpload, null, tint = Color.White, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(titulo.uppercase(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, textAlign = TextAlign.Center)
+        }
+        Text(
+            texto,
+            color = TemaATokens.TextoCorpo,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 6.dp)
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(12.dp)).background(TemaATokens.Neutro).cliqueTemaB(onClick = onNao),
+                contentAlignment = Alignment.Center
+            ) { Text(nao.uppercase(), color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp) }
+            Box(
+                Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(14.dp)).background(accent).cliqueTemaB(vibrar = true, onClick = onSim),
+                contentAlignment = Alignment.Center
+            ) { Text(sim.uppercase(), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp) }
         }
     }
 }

@@ -105,6 +105,12 @@ fun EpisodioDetailTemaAScreen(
     introDbResumo: String? = null,
     statusPlanilha: String? = null,
     statusIntroDb: String? = null,
+    onTocarPlanilha: () -> Unit = {},
+    onTocarIntroDb: () -> Unit = {},
+    temporadaCompleta: Boolean = false,
+    rotuloProximaTemporada: String = "",
+    onProximaTemporada: () -> Unit = {},
+    onIrProximoPendente: () -> Unit = {},
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
 ) {
@@ -199,7 +205,8 @@ fun EpisodioDetailTemaAScreen(
                     if (statusPlanilha != null) CartaoSincroniaTemaA(
                         "Planilha", statusPlanilha, Icons.Outlined.TableChart,
                         if (statusPlanilha == "Sincronizado") TemaATokens.SuccessText else TemaATokens.SemanticWarning,
-                        Modifier.weight(1f)
+                        Modifier.weight(1f),
+                        onClick = if (statusPlanilha == "Pendente") onTocarPlanilha else null
                     )
                     if (statusIntroDb != null) CartaoSincroniaTemaA(
                         "IntroDB", statusIntroDb,
@@ -210,14 +217,15 @@ fun EpisodioDetailTemaAScreen(
                             else -> TemaATokens.TextGray
                         },
                         Modifier.weight(1f),
-                        revisao = statusIntroDb == "Em revisão"
+                        revisao = statusIntroDb == "Em revisão",
+                        onClick = if (statusIntroDb == "Não enviado") onTocarIntroDb else null
                     )
                 }
             }
 
             val concluido = secoes.all { it.estado != EstadoMinutagem.PENDENTE }
             androidx.compose.animation.AnimatedVisibility(
-                visible = concluido && isProximoEnabled && rotuloProximo.isNotBlank(),
+                visible = concluido && (temporadaCompleta || rotuloProximo.isNotBlank()),
                 enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
                 exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
             ) {
@@ -231,16 +239,19 @@ fun EpisodioDetailTemaAScreen(
                 ) {
                     Icon(Icons.Filled.Check, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text("Episódio concluído", color = TemaATokens.SuccessText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Text(
-                        "Ir para o $rotuloProximo",
+                        if (temporadaCompleta) "Temporada completa" else "Episódio concluído",
+                        color = TemaATokens.SuccessText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
+                    )
+                    if (!temporadaCompleta || rotuloProximaTemporada.isNotBlank()) Text(
+                        if (temporadaCompleta) "Ir para a $rotuloProximaTemporada" else "Ir para o $rotuloProximo",
                         color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.primary)
-                            .clickable(onClick = onProximoClick)
+                            .clickable(onClick = if (temporadaCompleta) onProximaTemporada else onIrProximoPendente)
                             .padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
+                    ) else Spacer(Modifier.height(36.dp))
                 }
             }
 
@@ -787,10 +798,11 @@ private fun AvisoTempoTemaA(texto: String) {
 
 /** Cartãozinho "Planilha · Sincronizado" / "IntroDB · Publicado" no topo do episódio. */
 @Composable
-private fun CartaoSincroniaTemaA(nome: String, estado: String, icone: androidx.compose.ui.graphics.vector.ImageVector, cor: Color, modifier: Modifier = Modifier, revisao: Boolean = false) {
+private fun CartaoSincroniaTemaA(nome: String, estado: String, icone: androidx.compose.ui.graphics.vector.ImageVector, cor: Color, modifier: Modifier = Modifier, revisao: Boolean = false, onClick: (() -> Unit)? = null) {
     Row(
         modifier
             .clip(RoundedCornerShape(16.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .background(TemaATokens.DarkGraphiteSurface)
             .border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(16.dp))
             .padding(12.dp),
@@ -803,7 +815,8 @@ private fun CartaoSincroniaTemaA(nome: String, estado: String, icone: androidx.c
         Spacer(Modifier.width(10.dp))
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(nome, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-            Text(estado, color = cor, fontSize = 11.sp, maxLines = 1)
+            // a setinha mostra que dá para tocar
+            Text(if (onClick != null) "$estado ›" else estado, color = cor, fontSize = 11.sp, maxLines = 1)
         }
     }
 }
