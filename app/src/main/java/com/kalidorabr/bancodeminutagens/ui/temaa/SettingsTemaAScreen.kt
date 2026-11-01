@@ -1,5 +1,7 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.outlined.CheckCircle
 import com.kalidorabr.bancodeminutagens.ui.temab.sangrarB
 import androidx.compose.foundation.background
@@ -106,8 +108,6 @@ fun SettingsTemaAScreen(
     backupAutoPasta: String? = null,
     onBackupAutoChange: (Boolean) -> Unit = {}
 ) {
-    var showInterface by remember { mutableStateOf(false) }
-    val accent = MaterialTheme.colorScheme.primary
 
     Box(modifier.fillMaxSize()) {
         Column(
@@ -118,57 +118,50 @@ fun SettingsTemaAScreen(
                 .padding(top = if (TemaVisual.b) 0.dp else 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            CabecalhoPaginaTemaA("Ajustes", "Aparência, dados e backup")
+            CabecalhoPaginaTemaA("Ajustes", "")
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OverlineTemaA("Aparência")
-                Column(
+                TituloSecaoAjusteTemaA("Aparência")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VisualMode.disponiveis.forEach { m ->
+                        MiniaturaTemaTemaA(m, m == visualMode, Modifier.weight(1f)) {
+                            if (m != visualMode) onVisualModeSelected(m)
+                        }
+                    }
+                }
+                Row(
                     Modifier
                         .fillMaxWidth()
                         .clip(TemaATokens.ShapeCardCommon)
                         .background(TemaATokens.DarkGraphiteSurface)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row {
-                        Text("Cor de destaque", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        Text(selectedTheme.nome, color = TemaATokens.TextGray, fontSize = 13.sp)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        AppThemeOpcao.entries.forEach { op ->
-                            val on = op == selectedTheme
-                            val cor = TemaATokens.accentFor(op)
+                    Text("Cor de destaque", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    AppThemeOpcao.entries.forEach { op ->
+                        val on = op == selectedTheme
+                        Box(
+                            Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .clickable { onThemeSelected(op) }
+                                .semantics { contentDescription = if (on) "${op.nome}, escolhida" else op.nome },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Box(
                                 Modifier
-                                    .size(48.dp)
+                                    .size(26.dp)
                                     .clip(CircleShape)
+                                    .background(TemaATokens.accentFor(op))
                                     .border(2.dp, if (on) TemaATokens.TextWhite else Color.Transparent, CircleShape)
-                                    .padding(5.dp)
-                                    .clip(CircleShape)
-                                    .background(cor)
-                                    .clickable { onThemeSelected(op) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (on) Icon(Icons.Filled.Check, op.nome, tint = Color.White, modifier = Modifier.size(18.dp))
-                            }
+                            )
                         }
                     }
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .clip(TemaATokens.ShapeButtonField)
-                            .background(accent),
-                        contentAlignment = Alignment.Center
-                    ) { Text("Prévia do botão", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp) }
-                }
-                TemaAGroupCard {
-                    LinhaAjusteTemaA(Icons.Outlined.Palette, "Interface", "Escolher o tema do aplicativo", visualMode.titulo) { showInterface = true }
                 }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OverlineTemaA("Minutagem")
+                TituloSecaoAjusteTemaA("Minutagem")
                 TemaAGroupCard {
                     Row(
                         Modifier
@@ -178,13 +171,13 @@ fun SettingsTemaAScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(TemaATokens.DarkCardSurface),
+                            Modifier.size(26.dp),
                             contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Outlined.FastForward, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Outlined.FastForward, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(22.dp)) }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Modo maratona", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            Text("Concluir abre o próximo episódio", color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text("Concluir abre o próximo episódio", color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         }
                         com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASwitch(checked = maratona, onCheckedChange = onMaratonaChange)
                     }
@@ -197,13 +190,13 @@ fun SettingsTemaAScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(TemaATokens.DarkCardSurface),
+                            Modifier.size(26.dp),
                             contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Outlined.NotificationsActive, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Outlined.NotificationsActive, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(22.dp)) }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Aviso de estreia", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            Text("Avisa no dia da estreia", color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text("Avisa no dia da estreia", color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                         }
                         com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaASwitch(checked = avisoEstreia, onCheckedChange = onAvisoEstreiaChange)
                     }
@@ -211,7 +204,7 @@ fun SettingsTemaAScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OverlineTemaA("Dados")
+                TituloSecaoAjusteTemaA("Dados")
                 TemaAGroupCard {
                     // Google Sheets e IntroDB ficam juntos na tela Sincronização
                     LinhaAjusteTemaA(Icons.Default.Sync, "Sincronização", "Google Sheets e IntroDB", onClick = onGoogleSheetsClick)
@@ -224,9 +217,9 @@ fun SettingsTemaAScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(TemaATokens.DarkCardSurface),
+                            Modifier.size(26.dp),
                             contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Outlined.Schedule, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Outlined.Schedule, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(22.dp)) }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Backup automático", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -250,33 +243,56 @@ fun SettingsTemaAScreen(
             }
         }
 
-        TemaABottomSheet(visible = showInterface, onDismiss = { showInterface = false }) {
-            var escolhido by remember(visualMode) { mutableStateOf(visualMode) }
-            TemaASheetHeader("Ajustes", "Interface", onClose = { showInterface = false })
-            TemaAGroup {
-                VisualMode.disponiveis.forEachIndexed { i, m ->
-                    if (i > 0) TemaAGroupDivider()
-                    val on = m == escolhido
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { escolhido = m }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(m.titulo, color = if (on) accent else TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            Text(m.descricao, color = TemaATokens.TextGray, fontSize = 12.sp)
-                        }
-                        RadioTemaA(on)
-                    }
-                }
-            }
-            TemaAPrimaryButton("Aplicar", onClick = {
-                showInterface = false
-                if (escolhido != visualMode) onVisualModeSelected(escolhido)
-            })
+    }
+}
+
+/** Título de grupo dos Ajustes, em letras normais. */
+@Composable
+private fun TituloSecaoAjusteTemaA(texto: String) {
+    Text(texto, color = TemaATokens.TextGray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+}
+
+/** Miniatura de um tema: desenho simples, sempre nas cores do próprio tema, seja qual for o tema ativo. */
+@Composable
+private fun MiniaturaTemaTemaA(modo: VisualMode, escolhido: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    val (fundo, bloco, linha, botao) = when (modo) {
+        VisualMode.TEMA_B -> listOf(Color(0xFFF4F1EC), Color(0xFF1F1F24), Color(0xFFD8D2C8), Color(0xFFD7263D))
+        VisualMode.TEMA_C -> listOf(Color(0xFF16171B), Color(0xFF33556A), Color(0xFF2C2D34), Color.White)
+        VisualMode.TEMA_D -> listOf(Color(0xFF0B0918), Color(0xFF8B6CF0), Color(0xFF211A40), Color(0xFFF0304F))
+        else -> listOf(Color(0xFF0B0B0D), Color(0xFF26262C), Color(0xFF26262C), Color(0xFFE5484D))
+    }
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = if (escolhido) "Tema ${modo.titulo}, escolhido" else "Tema ${modo.titulo}" },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .height(92.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(fundo)
+                .border(if (escolhido) 2.dp else 1.dp, if (escolhido) accent else TemaATokens.DarkBorder, RoundedCornerShape(12.dp))
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            if (modo == VisualMode.TEMA_D) Box(Modifier.size(30.dp).border(4.dp, bloco, CircleShape))
+            else Box(Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(4.dp)).background(bloco))
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(linha))
+            Box(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(if (modo == VisualMode.TEMA_C || modo == VisualMode.TEMA_D) 6.dp else 4.dp)).background(botao))
         }
+        Text(
+            modo.titulo,
+            color = if (escolhido) TemaATokens.TextWhite else TemaATokens.TextGray,
+            fontSize = 12.sp,
+            fontWeight = if (escolhido) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1
+        )
     }
 }
 
@@ -307,16 +323,13 @@ private fun LinhaAjusteTemaA(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(TemaATokens.DarkCardSurface),
+            Modifier.size(26.dp),
             contentAlignment = Alignment.Center
-        ) { Icon(icon, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(20.dp)) }
+        ) { Icon(icon, null, tint = TemaATokens.TextSoft, modifier = Modifier.size(22.dp)) }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(titulo, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            Text(sub, color = TemaATokens.TextGray, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(sub, color = TemaATokens.TextGray, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         if (valor != null) {
             Text(valor, color = TemaATokens.TextGray, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)

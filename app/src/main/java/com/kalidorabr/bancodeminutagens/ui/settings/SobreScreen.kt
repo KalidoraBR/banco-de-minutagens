@@ -62,9 +62,22 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
-        versao = "1.15",
+        versao = "1.16",
         data = "31/10/2026",
         isAtual = true,
+        alteracoes = listOf(
+            "Novo visual do episódio: título maior, etiquetas curtas, seções em um bloco só e uma cor para cada seção.",
+            "Com o episódio completo, o botão principal leva ao próximo que falta. Abaixo dele ficam \"Voltar à temporada\" e as setas.",
+            "Novo visual da temporada: cartão de progresso, grade com 5 episódios por linha, números mais legíveis e a nuvem abaixo do número.",
+            "Novo visual dos Ajustes: miniaturas para escolher o tema e cor de destaque em uma linha.",
+            "Os temas agora se chamam Grafite, Papel, Cinema e Neon.",
+            "Correção: a série sai de \"Não iniciada\" também ao preencher pelo botão Usar do IntroDB, por cópia ou em lote."
+        )
+    ),
+    VersaoHistoricoItem(
+        versao = "1.15",
+        data = "31/10/2026",
+        isAtual = false,
         alteracoes = listOf(
             "Temporada completa: ao terminar o último episódio que faltava, o app avisa e oferece ir para a temporada seguinte.",
             "O botão da faixa verde leva ao episódio que ainda falta, mesmo que tenha ficado para trás.",

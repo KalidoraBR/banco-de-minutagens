@@ -169,17 +169,11 @@ fun TemporadaDetailTemaAScreen(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(nomeSerie, color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        if (selecionando) "Selecionar episódios" else nomeTemporada,
-                        color = TemaATokens.TextWhite,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    nomeSerie, color = TemaATokens.TextGray, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                )
                 CircleIconButtonTemaA(
                     onClick = { showMenu = true },
                     background = if (showMenu) TemaATokens.DarkBorder else TemaATokens.DarkCardSurface
@@ -188,28 +182,39 @@ fun TemporadaDetailTemaAScreen(
                 }
             }
 
-            // Setas para ir direto à temporada vizinha
-            if (!selecionando && (temporadaAnterior != null || temporadaProxima != null)) {
+            // Título grande (o Tema B já o mostra no cabeçalho) e atalhos para a temporada vizinha
+            val atalhos = !selecionando && (temporadaAnterior != null || temporadaProxima != null)
+            if (!TemaVisual.b || atalhos) {
                 Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (temporadaAnterior != null) {
+                    if (TemaVisual.b) Spacer(Modifier.weight(1f)) else Text(
+                        if (selecionando) "Selecionar episódios" else nomeTemporada,
+                        color = TemaATokens.TextWhite,
+                        fontSize = if (selecionando) 24.sp else 30.sp,
+                        lineHeight = 36.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (atalhos && temporadaAnterior != null) {
                         Row(
-                            Modifier.clip(CircleShape).background(TemaATokens.DarkCardSurface)
-                                .clickable { onTrocarTemporada(-1) }.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+                            Modifier.height(44.dp).clip(RoundedCornerShape(16.dp)).background(TemaATokens.DarkCardSurface)
+                                .clickable { onTrocarTemporada(-1) }.padding(start = 6.dp, end = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Temporada anterior", tint = TemaATokens.TextWhite, modifier = Modifier.size(20.dp))
-                            Text(temporadaAnterior, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Text(temporadaAnterior, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                         }
                     }
-                    Spacer(Modifier.weight(1f))
-                    if (temporadaProxima != null) {
+                    if (atalhos && temporadaAnterior != null && temporadaProxima != null) Spacer(Modifier.width(8.dp))
+                    if (atalhos && temporadaProxima != null) {
                         Row(
-                            Modifier.clip(CircleShape).background(TemaATokens.DarkCardSurface)
-                                .clickable { onTrocarTemporada(1) }.padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                            Modifier.height(44.dp).clip(RoundedCornerShape(16.dp)).background(TemaATokens.DarkCardSurface)
+                                .clickable { onTrocarTemporada(1) }.padding(start = 12.dp, end = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(temporadaProxima, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Text(temporadaProxima, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próxima temporada", tint = TemaATokens.TextWhite, modifier = Modifier.size(20.dp))
                         }
                     }
@@ -240,19 +245,24 @@ fun TemporadaDetailTemaAScreen(
                         }
                     }
                 }
-            } else Row(verticalAlignment = Alignment.Bottom) {
-                Text("$feitos", color = TemaATokens.TextWhite, fontFamily = TemaATokens.FontMono, fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
-                Text("/${ordenados.size}", color = TemaATokens.TextMuted, fontFamily = TemaATokens.FontMono, fontSize = 18.sp, modifier = Modifier.padding(bottom = 4.dp))
-                Spacer(Modifier.weight(1f))
-                Text("$porcentagem% concluído", color = TemaATokens.TextGray, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 4.dp))
-            }
-            if (!TemaVisual.d) Spacer(Modifier.height(10.dp))
-            if (!TemaVisual.d) BarraSegmentadaTemaA(feitos, parciais, pendentes)
-            if (!TemaVisual.d) Spacer(Modifier.height(10.dp))
-            if (!TemaVisual.d) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)) {
-                LegendaTemaA("Concluídos $feitos", TemaATokens.SemanticSuccess)
-                LegendaTemaA("Parciais $parciais", TemaATokens.SemanticWarning)
-                LegendaTemaA("Pendentes $pendentes", null)
+            } else Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(TemaATokens.ShapeCardCommon)
+                    .background(TemaATokens.DarkGraphiteSurface)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("$feitos de ${ordenados.size} episódios", color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("$porcentagem%", color = TemaATokens.TextGray, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
+                BarraSegmentadaTemaA(feitos, parciais, pendentes)
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    LegendaTemaA("Concluídos $feitos", TemaATokens.SemanticSuccess)
+                    LegendaTemaA("Parciais $parciais", TemaATokens.SemanticWarning)
+                    LegendaTemaA("Pendentes $pendentes", null)
+                }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -275,7 +285,7 @@ fun TemporadaDetailTemaAScreen(
             } else Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(if (TemaVisual.d) 24.dp else 14.dp))
+                    .clip(RoundedCornerShape(if (TemaVisual.d) 26.dp else 16.dp))
                     .background(TemaATokens.DarkGraphiteSurface)
                     .then(if (TemaVisual.d) Modifier.border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(24.dp)) else Modifier)
                     .padding(4.dp)
@@ -285,8 +295,8 @@ fun TemporadaDetailTemaAScreen(
                     Box(
                         Modifier
                             .weight(1f)
-                            .height(36.dp)
-                            .clip(RoundedCornerShape(if (TemaVisual.d) 20.dp else 10.dp))
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(if (TemaVisual.d) 22.dp else 12.dp))
                             .background(if (on) (if (TemaVisual.d) MaterialTheme.colorScheme.primary else TemaATokens.DarkBorder) else Color.Transparent)
                             .clickable { filtro = f },
                         contentAlignment = Alignment.Center
@@ -327,10 +337,10 @@ fun TemporadaDetailTemaAScreen(
 
             Spacer(Modifier.height(20.dp))
             LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
+                columns = GridCells.Fixed(5),
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = if (selecionando) 90.dp else 16.dp)
             ) {
                 itemsIndexed(visiveis, key = { _, e -> e.id }) { i, ep ->
@@ -510,29 +520,37 @@ private fun LegendaTemaA(texto: String, cor: Color?) {
 @Composable
 private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, onClick: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
-    val shape = if (TemaVisual.d) CircleShape else RoundedCornerShape(12.dp)
+    val shape = if (TemaVisual.d) CircleShape else RoundedCornerShape(16.dp)
     val (bg, fg) = when (ep.status) {
         StatusEpisodio.CONCLUIDO -> TemaATokens.SuccessBg to TemaATokens.SuccessText
         StatusEpisodio.PARCIAL -> TemaATokens.WarningBg to TemaATokens.SemanticWarning
         StatusEpisodio.PROXIMO -> Color.Transparent to TemaATokens.TextWhite
-        StatusEpisodio.PENDENTE -> TemaATokens.DarkGraphiteSurface to TemaATokens.TextoApagado
+        StatusEpisodio.PENDENTE -> TemaATokens.DarkGraphiteSurface to TemaATokens.TextSoft
     }
     Box(
         modifier
             .cliqueTemaA(onClick = onClick)
-            .then(if (TemaVisual.d) Modifier.aspectRatio(1f) else Modifier.height(48.dp))
+            .then(if (TemaVisual.d) Modifier.aspectRatio(1f) else Modifier.height(60.dp))
             .clip(shape)
             .background(bg)
             .then(
                 when {
                     selecionado -> Modifier.border(2.dp, accent, shape)
                     ep.status == StatusEpisodio.PROXIMO && !selecionando -> Modifier.border(2.dp, accent, shape)
+                    ep.status == StatusEpisodio.PENDENTE -> Modifier.border(1.dp, TemaATokens.DarkBorder, shape)
                     else -> Modifier
                 }
             ),
         contentAlignment = Alignment.Center
     ) {
-        Text(ep.numeroFormatado, color = fg, fontFamily = TemaATokens.FontMono, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        // Número com a nuvem logo abaixo, sem encostar na borda
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(ep.numeroFormatado, color = fg, fontFamily = TemaATokens.FontMono, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            if (!selecionado) {
+                if (emRevisao) NuvemRevisaoTemaA(Modifier.size(16.dp))
+                else if (noSite) Icon(Icons.Outlined.CloudDone, "Já no IntroDB", tint = fg.copy(alpha = 0.85f), modifier = Modifier.size(15.dp))
+            }
+        }
         if (selecionado) {
             Box(
                 Modifier
@@ -545,15 +563,6 @@ private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecio
             ) {
                 Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(10.dp))
             }
-        } else if (emRevisao) {
-            // nuvem azul com "!": enviado ao IntroDB, esperando a revisão do site
-            NuvemRevisaoTemaA(Modifier.align(Alignment.BottomEnd).padding(2.dp).size(15.dp))
-        } else if (noSite) {
-            // nuvem: este episódio já tem minutagem publicada no IntroDB
-            Icon(
-                Icons.Outlined.CloudDone, "Já no IntroDB", tint = fg.copy(alpha = 0.8f),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(2.dp).size(15.dp)
-            )
         }
     }
 }

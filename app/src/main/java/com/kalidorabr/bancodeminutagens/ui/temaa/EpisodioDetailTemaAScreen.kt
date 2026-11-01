@@ -1,8 +1,7 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
-import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.CloudDone
-import androidx.compose.material.icons.outlined.TableChart
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.cliqueTemaA
 import androidx.compose.material.icons.filled.Add
 import com.kalidorabr.bancodeminutagens.ui.temac.ambienteC
@@ -111,6 +110,7 @@ fun EpisodioDetailTemaAScreen(
     rotuloProximaTemporada: String = "",
     onProximaTemporada: () -> Unit = {},
     onIrProximoPendente: () -> Unit = {},
+    onVoltarTemporada: () -> Unit = onBackClick,
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
 ) {
@@ -149,7 +149,7 @@ fun EpisodioDetailTemaAScreen(
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = TemaATokens.SideMargin)
-                .padding(top = if (TemaVisual.b) 0.dp else 12.dp, bottom = 96.dp),
+                .padding(top = if (TemaVisual.b) 0.dp else 12.dp, bottom = if (TemaVisual.d) 96.dp else 172.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (TemaVisual.b) {
@@ -165,11 +165,13 @@ fun EpisodioDetailTemaAScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = TemaATokens.TextWhite, modifier = Modifier.size(20.dp))
                 }
                 Text(
-                    rotulo,
+                    "$nomeSerie · Temporada $tNum",
                     color = TemaATokens.TextGray,
-                    fontFamily = TemaATokens.FontMono,
                     fontSize = 13.sp,
-                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 CircleIconButtonTemaA(
@@ -181,79 +183,25 @@ fun EpisodioDetailTemaAScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(nomeSerie, color = TemaATokens.TextGray, fontSize = 13.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (dataExibicao.isNotBlank()) {
-                        Text(dataExibicao, color = TemaATokens.TextGray, fontSize = 12.sp)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    SeloEpisodioTemaA(statusEpisodioLabel)
-                }
+                // No Tema B o cabeçalho curvo já mostra o número do episódio
+                val linha = listOfNotNull(
+                    if (TemaVisual.b) null else "Episódio $numeroEpisodio",
+                    dataExibicao.takeIf { it.isNotBlank() }
+                ).joinToString(" · ")
+                if (linha.isNotBlank()) Text(linha, color = TemaATokens.TextGray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
                     tituloEpisodio.ifBlank { "Episódio $numeroEpisodio" },
                     color = TemaATokens.TextWhite,
-                    fontSize = 19.sp,
-                    lineHeight = 24.sp,
+                    fontSize = 30.sp,
+                    lineHeight = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-
-            if (statusPlanilha != null || statusIntroDb != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (statusPlanilha != null) CartaoSincroniaTemaA(
-                        "Planilha", statusPlanilha, Icons.Outlined.TableChart,
-                        if (statusPlanilha == "Sincronizado") TemaATokens.SuccessText else TemaATokens.SemanticWarning,
-                        Modifier.weight(1f),
-                        onClick = if (statusPlanilha == "Pendente") onTocarPlanilha else null
-                    )
-                    if (statusIntroDb != null) CartaoSincroniaTemaA(
-                        "IntroDB", statusIntroDb,
-                        if (statusIntroDb == "Publicado") Icons.Outlined.CloudDone else Icons.Outlined.Cloud,
-                        when (statusIntroDb) {
-                            "Publicado" -> TemaATokens.SuccessText
-                            "Em revisão" -> AzulRevisaoTemaA
-                            else -> TemaATokens.TextGray
-                        },
-                        Modifier.weight(1f),
-                        revisao = statusIntroDb == "Em revisão",
-                        onClick = if (statusIntroDb == "Não enviado") onTocarIntroDb else null
-                    )
-                }
+                EtiquetasEpisodioTemaA(statusEpisodioLabel, statusPlanilha, statusIntroDb, temporadaCompleta, onTocarPlanilha, onTocarIntroDb)
             }
 
             val concluido = secoes.all { it.estado != EstadoMinutagem.PENDENTE }
-            androidx.compose.animation.AnimatedVisibility(
-                visible = concluido && (temporadaCompleta || rotuloProximo.isNotBlank()),
-                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
-                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(TemaATokens.ShapeCardCommon)
-                        .background(TemaATokens.SuccessBg)
-                        .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Check, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        if (temporadaCompleta) "Temporada completa" else "Episódio concluído",
-                        color = TemaATokens.SuccessText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
-                    )
-                    if (!temporadaCompleta || rotuloProximaTemporada.isNotBlank()) Text(
-                        if (temporadaCompleta) "Ir para a $rotuloProximaTemporada" else "Ir para o $rotuloProximo",
-                        color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable(onClick = if (temporadaCompleta) onProximaTemporada else onIrProximoPendente)
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                    ) else Spacer(Modifier.height(36.dp))
-                }
-            }
 
             if (TemaVisual.d) {
                 com.kalidorabr.bancodeminutagens.ui.temad.AnelSecoesD(
@@ -264,9 +212,12 @@ fun EpisodioDetailTemaAScreen(
 
             if (introDbResumo != null) CartaoIntroDbTemaA(introDbResumo, onUsarIntroDb)
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Seções", color = TemaATokens.TextWhite, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-                secoes.forEach { s ->
+            Column(
+                if (TemaVisual.d) Modifier else Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface),
+                verticalArrangement = Arrangement.spacedBy(if (TemaVisual.d) 8.dp else 0.dp)
+            ) {
+                secoes.forEachIndexed { i, s ->
+                    if (i > 0 && !TemaVisual.d) Box(Modifier.fillMaxWidth().height(1.dp).background(TemaATokens.DarkBorder))
                     val anterior = minutagensAnterior.firstOrNull { it.tipo == s.tipo }
                     val podeCopiar = isCopyEnabled && s.estado == EstadoMinutagem.PENDENTE &&
                         anterior != null && anterior.estado != EstadoMinutagem.PENDENTE
@@ -281,14 +232,31 @@ fun EpisodioDetailTemaAScreen(
             }
         }
 
-        Row(
+        // Botão principal: com o episódio completo, leva ao que falta. Passa pelo mesmo envio do Concluir.
+        val concluidoAgora = secoes.all { it.estado != EstadoMinutagem.PENDENTE }
+        val irTemporada = concluidoAgora && temporadaCompleta && rotuloProximaTemporada.isNotBlank()
+        val irEpisodio = concluidoAgora && !temporadaCompleta && rotuloProximo.isNotBlank()
+        val textoPrincipal = when {
+            irTemporada -> "Ir para a $rotuloProximaTemporada"
+            irEpisodio -> "Ir para o $rotuloProximo"
+            else -> "Concluir"
+        }
+        val acaoPrincipal = when {
+            irTemporada -> onProximaTemporada
+            irEpisodio -> onIrProximoPendente
+            else -> onConcluirClick
+        }
+        val iconeConcluir: (@Composable () -> Unit)? = if (irTemporada || irEpisodio) null else {
+            { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+        }
+        Column(
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .background(TemaATokens.DarkBackground)
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (TemaVisual.d) {
                 val redondo: @Composable (androidx.compose.ui.graphics.vector.ImageVector, String, Boolean, () -> Unit) -> Unit = { icone, desc, on, acao ->
@@ -300,18 +268,25 @@ fun EpisodioDetailTemaAScreen(
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     redondo(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Anterior", isAnteriorEnabled, onAnteriorClick)
-                    TemaAPrimaryButton("Concluir", onClick = onConcluirClick, modifier = Modifier.width(180.dp).clip(RoundedCornerShape(28.dp)), height = 56.dp,
-                        leading = { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) })
+                    TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.width(180.dp).clip(RoundedCornerShape(28.dp)), height = 56.dp, leading = iconeConcluir)
                     redondo(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próximo", isProximoEnabled, onProximoClick)
                 }
-            } else BotaoNavEpTemaA("Anterior", isAnteriorEnabled, true, Modifier.weight(1f), onAnteriorClick)
-            if (!TemaVisual.d) TemaAPrimaryButton(
-                "Concluir",
-                onClick = onConcluirClick,
-                modifier = Modifier.weight(1f),
-                leading = { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-            )
-            if (!TemaVisual.d) BotaoNavEpTemaA("Próximo", isProximoEnabled, false, Modifier.weight(1f), onProximoClick)
+            } else {
+                TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.fillMaxWidth(), leading = iconeConcluir)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BotaoSetaEpTemaA(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Episódio anterior", isAnteriorEnabled, onAnteriorClick)
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(TemaATokens.DarkCardSurface)
+                            .clickable(onClick = onVoltarTemporada),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Voltar à temporada", color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                    BotaoSetaEpTemaA(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próximo episódio", isProximoEnabled, onProximoClick)
+                }
+            }
         }
 
         val origem = rotuloAnterior.ifBlank { copySourceLabel }
@@ -358,23 +333,82 @@ fun EpisodioDetailTemaAScreen(
     }
 }
 
+/** Etiquetas do topo: status, planilha e IntroDB. A cor mostra o estado; com a setinha, tocar faz a ação. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun SeloEpisodioTemaA(label: String) {
-    val (fg, bg) = when (label) {
-        "Concluído" -> TemaATokens.SuccessText to TemaATokens.SuccessBg
-        "Parcial" -> TemaATokens.SemanticWarning to TemaATokens.WarningBg
-        "Próximo" -> TemaATokens.ErroTexto to TemaATokens.ErroFundo
-        else -> TemaATokens.TextSoft to TemaATokens.DarkCardSurface
+private fun EtiquetasEpisodioTemaA(
+    status: String,
+    planilha: String?,
+    introDb: String?,
+    temporadaCompleta: Boolean,
+    onTocarPlanilha: () -> Unit,
+    onTocarIntroDb: () -> Unit
+) {
+    androidx.compose.foundation.layout.FlowRow(
+        Modifier.padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val (fgStatus, bgStatus) = when (status) {
+            "Concluído" -> TemaATokens.SuccessText to TemaATokens.SuccessBg
+            "Parcial" -> TemaATokens.SemanticWarning to TemaATokens.WarningBg
+            "Próximo" -> TemaATokens.ErroTexto to TemaATokens.ErroFundo
+            else -> TemaATokens.TextSoft to TemaATokens.DarkCardSurface
+        }
+        EtiquetaTemaA(status, status, fgStatus, bgStatus)
+        if (temporadaCompleta) EtiquetaTemaA("Temporada completa", "Temporada completa", TemaATokens.SuccessText, TemaATokens.SuccessBg)
+        if (planilha != null) {
+            val pendente = planilha == "Pendente"
+            EtiquetaTemaA(
+                "Planilha", "Planilha: $planilha",
+                if (pendente) TemaATokens.SemanticWarning else TemaATokens.SuccessText,
+                if (pendente) TemaATokens.WarningBg else TemaATokens.SuccessBg,
+                if (pendente) onTocarPlanilha else null
+            )
+        }
+        if (introDb != null) {
+            val (fg, bg) = when (introDb) {
+                "Publicado" -> TemaATokens.SuccessText to TemaATokens.SuccessBg
+                "Em revisão" -> AzulRevisaoTemaA to AzulRevisaoTemaA.copy(alpha = 0.14f)
+                else -> TemaATokens.TextGray to TemaATokens.DarkCardSurface
+            }
+            EtiquetaTemaA("IntroDB", "IntroDB: $introDb", fg, bg, if (introDb == "Não enviado") onTocarIntroDb else null)
+        }
     }
+}
+
+@Composable
+private fun EtiquetaTemaA(texto: String, descricao: String, fg: Color, bg: Color, onClick: (() -> Unit)? = null) {
     Text(
-        label, color = fg, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-        modifier = Modifier.clip(CircleShape).background(bg).padding(horizontal = 9.dp, vertical = 3.dp)
+        if (onClick != null) "$texto ›" else texto,
+        color = fg, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(bg)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .semantics { contentDescription = descricao }
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     )
+}
+
+/** Cor de cada seção. Encerramento: lilás, ou ciano quando a cor de destaque já é roxa. */
+@Composable
+private fun corSecaoTemaA(tipo: TipoMinutagem): Color {
+    val accent = MaterialTheme.colorScheme.primary
+    return when (tipo) {
+        TipoMinutagem.ABERTURA -> accent
+        TipoMinutagem.RECAP -> if (TemaVisual.d) com.kalidorabr.bancodeminutagens.ui.temad.AmareloD else TemaATokens.SemanticWarning
+        else -> when {
+            TemaVisual.d -> com.kalidorabr.bancodeminutagens.ui.temad.CianoD
+            accent.blue > accent.green && accent.red > 0.35f && accent.blue > 0.6f -> if (TemaVisual.b) Color(0xFF0B7FA8) else Color(0xFF4CC9F0)
+            TemaVisual.b -> Color(0xFF6D4FC7)
+            else -> Color(0xFFA78BFA)
+        }
+    }
 }
 
 @Composable
 private fun LinhaDoTempoTemaA(secoes: List<MinutagemSecao>, duracaoSeg: Int = 0) {
-    val accent = MaterialTheme.colorScheme.primary
     val trechos = secoes.mapNotNull { s ->
         if (s.estado != EstadoMinutagem.PREENCHIDO) return@mapNotNull null
         val a = MinutagemSecao.parseMmSsToSeconds(s.tempoInicio)
@@ -384,15 +418,8 @@ private fun LinhaDoTempoTemaA(secoes: List<MinutagemSecao>, duracaoSeg: Int = 0)
     val fimMax = trechos.maxOfOrNull { it.third } ?: 0
     // vai até a duração real do episódio (TMDB); sem ela, 24 minutos
     val escala = maxOf(if (duracaoSeg > 0) duracaoSeg else 24 * 60, fimMax + 60).toFloat()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(TemaATokens.ShapeCardCommon)
-            .background(TemaATokens.DarkGraphiteSurface)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        OverlineTemaA("Linha do tempo")
+    val cores = TipoMinutagem.entries.associateWith { corSecaoTemaA(it) }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val c = TemaVisual.c
         if (c) {
             // Tema C: nome de cada "capítulo" em cima da barra, como num player
@@ -415,8 +442,8 @@ private fun LinhaDoTempoTemaA(secoes: List<MinutagemSecao>, duracaoSeg: Int = 0)
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
-                .height(if (c) 26.dp else 18.dp)
-                .clip(RoundedCornerShape(if (c) 8.dp else 6.dp))
+                .height(if (c) 26.dp else 10.dp)
+                .clip(RoundedCornerShape(if (c) 8.dp else 5.dp))
                 .background(TemaATokens.Neutro)
         ) {
             if (c) for (i in 1..9) Box(Modifier.offset(x = maxWidth * (i / 10f)).padding(vertical = 8.dp).width(1.dp).fillMaxHeight().background(Color.White.copy(alpha = 0.14f)))
@@ -426,7 +453,7 @@ private fun LinhaDoTempoTemaA(secoes: List<MinutagemSecao>, duracaoSeg: Int = 0)
                         .offset(x = maxWidth * (a / escala))
                         .width(maxOf(maxWidth * ((b - a) / escala), 3.dp))
                         .fillMaxHeight()
-                        .background(if (tipo == TipoMinutagem.RECAP) TemaATokens.SemanticWarning else accent)
+                        .background(cores.getValue(tipo))
                 )
             }
             // cursor branco no fim do último trecho marcado
@@ -435,8 +462,8 @@ private fun LinhaDoTempoTemaA(secoes: List<MinutagemSecao>, duracaoSeg: Int = 0)
             }
         }
         Row {
-            Text("00:00", color = TemaATokens.TextMuted, fontFamily = TemaATokens.FontMono, fontSize = 11.sp, modifier = Modifier.weight(1f))
-            Text(MinutagemSecao.formatSecondsToMmSs(escala.toInt()), color = TemaATokens.TextMuted, fontFamily = TemaATokens.FontMono, fontSize = 11.sp)
+            Text("00:00", color = TemaATokens.TextGray, fontFamily = TemaATokens.FontMono, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            Text(MinutagemSecao.formatSecondsToMmSs(escala.toInt()), color = TemaATokens.TextGray, fontFamily = TemaATokens.FontMono, fontSize = 12.sp)
         }
     }
 }
@@ -448,15 +475,10 @@ private fun CartaoSecaoTemaA(
     onCopiar: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    val accent = MaterialTheme.colorScheme.primary
     val d = TemaVisual.d
-    val cor = if (d) when (s.tipo) {
-        TipoMinutagem.ABERTURA -> accent
-        TipoMinutagem.RECAP -> com.kalidorabr.bancodeminutagens.ui.temad.AmareloD
-        else -> com.kalidorabr.bancodeminutagens.ui.temad.CianoD
-    } else if (s.tipo == TipoMinutagem.RECAP) TemaATokens.SemanticWarning else accent
+    val cor = corSecaoTemaA(s.tipo)
     val nome = nomeSecaoTemaA(s.tipo)
-    val forma = if (d) RoundedCornerShape(50) else TemaATokens.ShapeCardCommon
+    val forma = if (d) RoundedCornerShape(50) else RoundedCornerShape(0.dp)
     val bolha: @Composable (Boolean) -> Unit = { feita ->
         if (d) Box(
             Modifier.size(34.dp).clip(CircleShape)
@@ -469,9 +491,9 @@ private fun CartaoSecaoTemaA(
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(if (d) 68.dp else 64.dp)
+                .height(if (d) 68.dp else 60.dp)
                 .clip(forma)
-                .background(TemaATokens.DarkGraphiteSurface)
+                .background(if (d) TemaATokens.DarkGraphiteSurface else Color.Transparent)
                 .then(if (d) Modifier.border(1.dp, TemaATokens.DarkBorder, forma) else Modifier)
                 .clickable(onClick = onClick)
                 .padding(start = if (d) 12.dp else 16.dp, end = 16.dp),
@@ -487,16 +509,14 @@ private fun CartaoSecaoTemaA(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            Spacer(Modifier.width(10.dp))
-            Icon(Icons.Filled.Check, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(18.dp))
         }
     } else {
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(if (d) 68.dp else 64.dp)
+                .height(if (d) 68.dp else 60.dp)
                 .clip(forma)
-                .background(TemaATokens.DarkGraphiteSurface)
+                .background(if (d) TemaATokens.DarkGraphiteSurface else Color.Transparent)
                 .then(if (d) Modifier.border(1.dp, TemaATokens.DarkBorder, forma) else Modifier)
                 .clickable(onClick = onClick)
                 .padding(start = if (d) 12.dp else 16.dp, end = 8.dp),
@@ -507,17 +527,15 @@ private fun CartaoSecaoTemaA(
                 Modifier
                     .size(10.dp)
                     .clip(CircleShape)
-                    .then(if (naoPossui) Modifier.background(TemaATokens.TextMuted) else Modifier.border(2.dp, TemaATokens.TextMuted, CircleShape))
+                    .then(if (naoPossui) Modifier.background(cor) else Modifier.border(2.dp, TemaATokens.TextMuted, CircleShape))
             )
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(nome, color = TemaATokens.TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                if (!naoPossui) Text("Toque para marcar", color = TemaATokens.TextoApagado, fontSize = 12.sp)
+                if (!naoPossui) Text("Toque para marcar", color = TemaATokens.TextGray, fontSize = 12.sp)
             }
             if (naoPossui) {
-                Text("Não possui", color = TemaATokens.TextoApagado, fontSize = 12.sp)
-                Spacer(Modifier.width(8.dp))
-                Icon(Icons.Filled.Check, null, tint = TemaATokens.SuccessText, modifier = Modifier.size(18.dp))
+                Text("Não possui", color = TemaATokens.TextGray, fontSize = 13.sp)
                 Spacer(Modifier.width(8.dp))
             } else if (copiarRotulo != null) {
                 // O bloco inteiro abre o teclado; aqui fica só o botão de copiar do episódio anterior
@@ -541,21 +559,15 @@ private fun CartaoSecaoTemaA(
 }
 
 @Composable
-private fun BotaoNavEpTemaA(texto: String, enabled: Boolean, esquerda: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val cor = if (enabled) TemaATokens.TextWhite else TemaATokens.Desativado
-    Row(
-        modifier
-            .height(TemaATokens.HeightPrimaryButton)
-            .clip(TemaATokens.ShapePrimaryButton)
+private fun BotaoSetaEpTemaA(icone: androidx.compose.ui.graphics.vector.ImageVector, descricao: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(width = 54.dp, height = 48.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(TemaATokens.DarkCardSurface)
             .clickable(enabled = enabled, onClick = onClick),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (esquerda) Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = cor, modifier = Modifier.size(18.dp))
-        Text(texto, color = cor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        if (!esquerda) Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = cor, modifier = Modifier.size(18.dp))
-    }
+        contentAlignment = Alignment.Center
+    ) { Icon(icone, descricao, tint = if (enabled) TemaATokens.TextWhite else TemaATokens.Desativado, modifier = Modifier.size(22.dp)) }
 }
 
 /** Pop-up "Editar abertura/recap/encerramento" com teclado numérico próprio. */
@@ -792,31 +804,6 @@ private fun AvisoTempoTemaA(texto: String) {
             Text("Confira este tempo", color = TemaATokens.SemanticWarning, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             Text(texto, color = TemaATokens.TextWhite, fontSize = 12.sp, lineHeight = 17.sp)
             Text("Toque em \"Salvar assim\" se estiver certo.", color = TemaATokens.TextGray, fontSize = 11.sp)
-        }
-    }
-}
-
-/** Cartãozinho "Planilha · Sincronizado" / "IntroDB · Publicado" no topo do episódio. */
-@Composable
-private fun CartaoSincroniaTemaA(nome: String, estado: String, icone: androidx.compose.ui.graphics.vector.ImageVector, cor: Color, modifier: Modifier = Modifier, revisao: Boolean = false, onClick: (() -> Unit)? = null) {
-    Row(
-        modifier
-            .clip(RoundedCornerShape(16.dp))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .background(TemaATokens.DarkGraphiteSurface)
-            .border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(34.dp).clip(CircleShape).background(cor.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
-            if (revisao) NuvemRevisaoTemaA(Modifier.size(19.dp))
-            else Icon(icone, null, tint = cor, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(10.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(nome, color = TemaATokens.TextWhite, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-            // a setinha mostra que dá para tocar
-            Text(if (onClick != null) "$estado ›" else estado, color = cor, fontSize = 11.sp, maxLines = 1)
         }
     }
 }
