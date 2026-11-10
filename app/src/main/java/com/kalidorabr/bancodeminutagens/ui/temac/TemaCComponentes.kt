@@ -310,7 +310,12 @@ private infix fun androidx.compose.animation.EnterTransition.togetherWith(exit: 
 
 /** "Minhas séries" do C: fileira de pôsteres que desliza para o lado, com a etiqueta do próximo episódio e a barra de progresso. */
 @Composable
-fun CarrosselSeriesTemaC(series: List<SerieItem>, onOpen: (SerieItem) -> Unit) {
+fun CarrosselSeriesTemaC(
+    series: List<SerieItem>,
+    onOpen: (SerieItem) -> Unit,
+    nomeVaiAoEpisodio: Boolean = false,
+    onContinue: (com.kalidorabr.bancodeminutagens.model.DestinoEpisodio) -> Unit = {}
+) {
     val accent = MaterialTheme.colorScheme.primary
     Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Minhas séries", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = TemaATokens.SideMargin))
@@ -320,8 +325,10 @@ fun CarrosselSeriesTemaC(series: List<SerieItem>, onOpen: (SerieItem) -> Unit) {
         ) {
             items(series, key = { it.id }) { serie ->
                 val destino = remember(serie) { com.kalidorabr.bancodeminutagens.model.SerieProgressoUtils.encontrarProximoEpisodio(serie) }
-                Column(Modifier.width(124.dp).cliqueTemaC { onOpen(serie) }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(Modifier.width(124.dp).height(180.dp).clip(RoundedCornerShape(10.dp)).background(TemaATokens.Track)) {
+                val vaiAoEpisodio = nomeVaiAoEpisodio && destino != null
+                Column(Modifier.width(124.dp).then(if (vaiAoEpisodio) Modifier else Modifier.cliqueTemaC { onOpen(serie) }), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.width(124.dp).height(180.dp).clip(RoundedCornerShape(10.dp)).background(TemaATokens.Track)
+                        .then(if (vaiAoEpisodio) Modifier.cliqueTemaC { onOpen(serie) } else Modifier)) {
                         val poster = serie.posterUrl.ifBlank { serie.imageUrl }
                         if (poster.isNotBlank()) AsyncImage(model = poster, contentDescription = serie.titulo, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         if (destino != null) {
@@ -335,7 +342,10 @@ fun CarrosselSeriesTemaC(series: List<SerieItem>, onOpen: (SerieItem) -> Unit) {
                             Box(Modifier.fillMaxWidth(serie.progressoFloat.coerceIn(0f, 1f)).fillMaxHeight().background(if (serie.isFinalizada && !serie.isIncompleta) TemaATokens.SemanticSuccess else accent))
                         }
                     }
-                    Text(serie.titulo, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        serie.titulo, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth().then(if (vaiAoEpisodio) Modifier.cliqueTemaC { onContinue(destino!!) }.padding(vertical = 4.dp) else Modifier)
+                    )
                 }
             }
         }

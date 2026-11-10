@@ -58,7 +58,7 @@ Você adiciona a série pelo nome, o app traz temporadas, episódios, pôsteres 
 
 **Seus dados seguros**
 - Backup em arquivo, backup automático semanal e lixeira com restauração
-- Sincronização opcional com a sua planilha do Google Sheets
+- Sincronização opcional com a sua própria planilha do Google Sheets, com passo a passo dentro do app
 - Tudo fica no seu aparelho: chaves e endereços que você configura não saem dele
 
 ## Integrações
@@ -66,7 +66,7 @@ Você adiciona a série pelo nome, o app traz temporadas, episódios, pôsteres 
 | | |
 |---|---|
 | 🎬 **TMDB** | Séries, temporadas, episódios, pôsteres, datas e duração de cada episódio |
-| 📊 **Google Sheets** | Exporta, importa e sincroniza as minutagens com a sua planilha |
+| 📊 **Google Sheets** | Exporta, importa e sincroniza as minutagens com a sua planilha. O [código da planilha](app/src/main/assets/BancoDeMinutagens.gs) é copiado pelo app em Ajustes › Sincronização |
 | ⏭️ **IntroDB** | Envia as suas minutagens para o [introdb.app](https://introdb.app), confere o que já existe lá e importa tempos para as seções vazias |
 
 ## Instalar

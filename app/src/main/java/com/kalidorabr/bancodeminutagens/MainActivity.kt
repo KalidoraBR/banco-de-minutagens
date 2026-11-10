@@ -1035,7 +1035,8 @@ fun BancoDeMinutagensApp(
 
                 val serieAtualizada = serie.copy(
                     lastEditedEpisodeId = episodioId,
-                    lastUpdatedAt = if (episodioCompleto) System.currentTimeMillis() else serie.lastUpdatedAt,
+                    // qualquer seção salva conta: o destaque da Início é "de onde parou"
+                    lastUpdatedAt = System.currentTimeMillis(),
                     temporadas = novasTemporadas
                 )
                 SerieProgressoUtils.recalcularProgressoSerie(serieAtualizada)
@@ -1998,7 +1999,8 @@ fun BancoDeMinutagensApp(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 96.dp),
+                    // no episódio os avisos ficam acima de Concluir e das setas, sem cobrir os botões
+                    .padding(bottom = if (selectedEpisodioId != null) 150.dp else 96.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val fb = currentFeedback
@@ -2612,7 +2614,12 @@ fun HomeScreen(
                     if (cabecalhoNaLista) item(key = "cabecalhoInicio") { Column { cabecalhoInicio() } }
                     if (cabecalhoNaLista && visualMode == VisualMode.TEMA_C) {
                         item(key = "carrosselC") {
-                            com.kalidorabr.bancodeminutagens.ui.temac.CarrosselSeriesTemaC(filteredSeries) { onOpenSerieDetail(it) }
+                            com.kalidorabr.bancodeminutagens.ui.temac.CarrosselSeriesTemaC(
+                                series = filteredSeries,
+                                onOpen = { onOpenSerieDetail(it) },
+                                nomeVaiAoEpisodio = selectedFilter.equals("Em andamento", ignoreCase = true),
+                                onContinue = onContinueClick
+                            )
                         }
                     } else items(
                         items = filteredSeries,
@@ -2623,7 +2630,8 @@ fun HomeScreen(
                                 modifier = Modifier.animateItem(),
                                 serie = serie,
                                 onOpenSerieClick = { onOpenSerieDetail(serie) },
-                                onContinueClick = onContinueClick
+                                onContinueClick = onContinueClick,
+                                cardVaiAoEpisodio = selectedTab == 0 && selectedFilter.equals("Em andamento", ignoreCase = true)
                             )
                         }
                     }

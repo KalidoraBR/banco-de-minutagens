@@ -454,12 +454,17 @@ fun SerieTemaACardItem(
     serie: SerieItem,
     onOpenSerieClick: (SerieItem) -> Unit = {},
     onContinueClick: (DestinoEpisodio) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    cardVaiAoEpisodio: Boolean = false
 ) {
     val finalizada = serie.isFinalizada && !serie.isIncompleta
+    // filtro "Em andamento": o cartão abre o próximo episódio e o pôster abre a página da série
+    val destino = remember(serie, cardVaiAoEpisodio) {
+        if (cardVaiAoEpisodio) SerieProgressoUtils.encontrarProximoEpisodio(serie) else null
+    }
     Row(
         modifier = modifier
-            .cliqueTemaA { onOpenSerieClick(serie) }
+            .cliqueTemaA { if (destino != null) onContinueClick(destino) else onOpenSerieClick(serie) }
             .fillMaxWidth()
             .padding(horizontal = TemaATokens.SideMargin, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -472,6 +477,7 @@ fun SerieTemaACardItem(
                 .height(72.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(TemaATokens.DarkCardSurface)
+                .then(if (destino != null) Modifier.cliqueTemaA { onOpenSerieClick(serie) } else Modifier)
         ) {
             if (poster.isNotBlank()) {
                 AsyncImage(

@@ -279,9 +279,17 @@ fun ContinueCardTemaD(serie: SerieItem, destino: DestinoEpisodio, onOpenSerieCli
 
 /** Linha da série no D: pôster retangular, nome, próximo episódio e um anelzinho com a porcentagem. */
 @Composable
-fun SerieTemaDCardItem(serie: SerieItem, onOpenSerieClick: (SerieItem) -> Unit, modifier: Modifier = Modifier) {
+fun SerieTemaDCardItem(
+    serie: SerieItem,
+    onOpenSerieClick: (SerieItem) -> Unit,
+    modifier: Modifier = Modifier,
+    onContinueClick: (DestinoEpisodio) -> Unit = {},
+    cardVaiAoEpisodio: Boolean = false
+) {
     val finalizada = serie.isFinalizada && !serie.isIncompleta
     val destino = remember(serie) { SerieProgressoUtils.encontrarProximoEpisodio(serie) }
+    // filtro "Em andamento": o cartão abre o próximo episódio e o pôster abre a página da série
+    val vaiAoEpisodio = cardVaiAoEpisodio && destino != null
     Row(
         modifier
             .padding(horizontal = 16.dp, vertical = 5.dp)
@@ -289,11 +297,13 @@ fun SerieTemaDCardItem(serie: SerieItem, onOpenSerieClick: (SerieItem) -> Unit, 
             .clip(RoundedCornerShape(22.dp))
             .background(TemaATokens.DarkCardSurface)
             .border(1.dp, TemaATokens.DarkBorder, RoundedCornerShape(22.dp))
-            .cliqueTemaD { onOpenSerieClick(serie) }
+            .cliqueTemaD { if (vaiAoEpisodio) onContinueClick(destino!!) else onOpenSerieClick(serie) }
             .padding(start = 10.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        PosterNeonD(serie.posterUrl.ifBlank { serie.imageUrl }, 50.dp, 70.dp, 10.dp, false, serie.titulo)
+        Box(if (vaiAoEpisodio) Modifier.clip(RoundedCornerShape(10.dp)).cliqueTemaD { onOpenSerieClick(serie) } else Modifier) {
+            PosterNeonD(serie.posterUrl.ifBlank { serie.imageUrl }, 50.dp, 70.dp, 10.dp, false, serie.titulo)
+        }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(serie.titulo, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)

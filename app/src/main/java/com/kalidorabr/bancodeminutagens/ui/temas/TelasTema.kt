@@ -489,12 +489,13 @@ fun TelaLinhaSerie(
     serie: SerieItem,
     onOpenSerieClick: (SerieItem) -> Unit = {},
     onContinueClick: (DestinoEpisodio) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    cardVaiAoEpisodio: Boolean = false
 ) {
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
-        VisualMode.TEMA_D -> com.kalidorabr.bancodeminutagens.ui.temad.SerieTemaDCardItem(serie = serie, onOpenSerieClick = onOpenSerieClick, modifier = modifier)
-        else -> SerieTemaACardItem(serie = serie, onOpenSerieClick = onOpenSerieClick, onContinueClick = onContinueClick, modifier = modifier)
+        VisualMode.TEMA_D -> com.kalidorabr.bancodeminutagens.ui.temad.SerieTemaDCardItem(serie = serie, onOpenSerieClick = onOpenSerieClick, modifier = modifier, onContinueClick = onContinueClick, cardVaiAoEpisodio = cardVaiAoEpisodio)
+        else -> SerieTemaACardItem(serie = serie, onOpenSerieClick = onOpenSerieClick, onContinueClick = onContinueClick, modifier = modifier, cardVaiAoEpisodio = cardVaiAoEpisodio)
     }
 }
 

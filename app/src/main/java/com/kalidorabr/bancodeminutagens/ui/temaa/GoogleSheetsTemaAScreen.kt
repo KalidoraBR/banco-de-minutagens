@@ -16,6 +16,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.ContentCopy
+import com.kalidorabr.bancodeminutagens.data.PlanilhaUsuario
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -114,7 +121,7 @@ fun GoogleSheetsTemaAScreen(
     // Teste e salvamento real das credenciais
     val testarESalvarConexao = {
         if (spreadsheetId.isBlank() || scriptUrl.isBlank()) {
-            testErrorMessage = "Preencha o ID da planilha e a URL do Apps Script."
+            testErrorMessage = "Preencha o link da planilha e o link do App da Web."
         } else if (!isNetworkAvailable(context)) {
             testErrorMessage = "Não foi possível verificar a conexão no momento. Verifique sua internet."
         } else {
@@ -165,7 +172,7 @@ fun GoogleSheetsTemaAScreen(
             activeFeedback = SyncFeedbackMessage(
                 isError = true,
                 title = "Não foi possível sincronizar",
-                subtitle = "Preencha o ID da planilha e a URL primeiro."
+                subtitle = "Preencha o link da planilha e o link do App da Web primeiro."
             )
         } else {
             activeFeedback = null
@@ -223,7 +230,7 @@ fun GoogleSheetsTemaAScreen(
             activeFeedback = SyncFeedbackMessage(
                 isError = true,
                 title = "Não foi possível sincronizar",
-                subtitle = "Preencha o ID da planilha e a URL primeiro."
+                subtitle = "Preencha o link da planilha e o link do App da Web primeiro."
             )
         } else if (seriesLocaisAtuais.isEmpty()) {
             activeFeedback = SyncFeedbackMessage(
@@ -274,7 +281,7 @@ fun GoogleSheetsTemaAScreen(
             activeFeedback = SyncFeedbackMessage(
                 isError = true,
                 title = "Não foi possível sincronizar",
-                subtitle = "Preencha o ID da planilha e a URL primeiro."
+                subtitle = "Preencha o link da planilha e o link do App da Web primeiro."
             )
         } else {
             activeFeedback = null
@@ -500,8 +507,10 @@ fun GoogleSheetsTemaAScreen(
                 testErrorMessage = null
                 showEditar = false
             })
-            CampoTemaA("ID da planilha", spreadsheetId, { spreadsheetId = it.trim(); testErrorMessage = null }, placeholder = "1AbC…")
-            CampoTemaA("URL do Apps Script", scriptUrl, { scriptUrl = it.trim(); testErrorMessage = null }, placeholder = "https://script.google.com/…/exec")
+            PassoAPassoPlanilhaTemaA(abertoNoInicio = !isConnectionValidated)
+            // colar o link inteiro da planilha também vale: o app guarda só o ID
+            CampoTemaA("Link ou ID da planilha", spreadsheetId, { spreadsheetId = PlanilhaUsuario.extrairId(it); testErrorMessage = null }, placeholder = "docs.google.com/spreadsheets/d/…")
+            CampoTemaA("Link do App da Web (Apps Script)", scriptUrl, { scriptUrl = it.trim(); testErrorMessage = null }, placeholder = "https://script.google.com/…/exec")
             when {
                 isTestingConnection -> Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(color = accent, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
@@ -535,6 +544,83 @@ fun GoogleSheetsTemaAScreen(
     // Fecha o pop-up de edição quando o teste der certo
     LaunchedEffect(isConnectionValidated, isEditingCredentials) {
         if (isConnectionValidated && !isEditingCredentials) showEditar = false
+    }
+}
+
+/** Como criar a própria planilha: 4 passos e o botão que copia o código do Apps Script. */
+@Composable
+private fun PassoAPassoPlanilhaTemaA(abertoNoInicio: Boolean) {
+    val context = LocalContext.current
+    val accent = MaterialTheme.colorScheme.primary
+    var aberto by remember { mutableStateOf(abertoNoInicio) }
+    var copiado by remember { mutableStateOf(false) }
+    LaunchedEffect(copiado) { if (copiado) { delay(2500); copiado = false } }
+
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(TemaASheetColors.Group)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().clickable { aberto = !aberto }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Como criar minha planilha", color = TemaATokens.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Icon(
+                if (aberto) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null,
+                tint = TemaATokens.TextGray, modifier = Modifier.size(20.dp)
+            )
+        }
+        if (aberto) {
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = 300.dp).verticalScroll(rememberScrollState())
+                    .padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("É mais fácil fazer pelo computador. Leva uns 5 minutos e só precisa ser feito uma vez.", color = TemaATokens.TextGray, fontSize = 12.sp, lineHeight = 17.sp)
+                PassoPlanilhaTemaA(1, "Crie uma planilha em branco no Google Planilhas.")
+                PassoPlanilhaTemaA(2, "Na planilha, abra Extensões › Apps Script. Apague o que estiver lá, cole o código e salve.") {
+                    Row(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(if (copiado) TemaATokens.SuccessBg else TemaATokens.Neutro)
+                            .clickable {
+                                val clip = context.getSystemService(android.content.ClipboardManager::class.java)
+                                clip?.setPrimaryClip(android.content.ClipData.newPlainText("Código da planilha", PlanilhaUsuario.codigo(context)))
+                                copiado = true
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (copiado) Icons.Outlined.CheckCircle else Icons.Outlined.ContentCopy, null,
+                            tint = if (copiado) TemaATokens.SuccessText else accent, modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (copiado) "Código copiado" else "Copiar código",
+                            color = if (copiado) TemaATokens.SuccessText else TemaATokens.TextWhite,
+                            fontSize = 13.sp, fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                PassoPlanilhaTemaA(3, "Toque em Implantar › Nova implantação e escolha App da Web. Em \"Executar como\", deixe Eu. Em \"Quem pode acessar\", escolha Qualquer pessoa. Autorize quando o Google pedir e copie o link do App da Web.")
+                PassoPlanilhaTemaA(4, "Cole abaixo o link da planilha e o link do App da Web e toque em Salvar e sincronizar. As abas de cada série são criadas sozinhas.")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PassoPlanilhaTemaA(numero: Int, texto: String, extra: @Composable () -> Unit = {}) {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            Modifier.size(22.dp).clip(androidx.compose.foundation.shape.CircleShape).background(TemaATokens.Neutro),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("$numero", color = TemaATokens.TextWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = TemaATokens.FontMono)
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(texto, color = TemaATokens.TextSoft, fontSize = 13.sp, lineHeight = 19.sp)
+            extra()
+        }
     }
 }
 

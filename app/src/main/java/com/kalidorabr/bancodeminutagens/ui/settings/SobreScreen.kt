@@ -62,9 +62,21 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.17",
+        data = "10/11/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "Sua própria planilha: em Ajustes › Sincronização › Editar conexão, o passo a passo \"Como criar minha planilha\" e o botão Copiar código montam uma planilha do Google Sheets em poucos minutos.",
+            "O campo da planilha aceita o link inteiro; o app tira o ID sozinho.",
+            "Na Início, no filtro Em andamento, tocar no nome da série abre o próximo episódio e tocar no pôster abre a página da série.",
+            "O destaque \"Continuar de onde parou\" acompanha qualquer seção salva, não só episódios completos.",
+            "No episódio, o aviso de Desfazer aparece acima dos botões e não cobre mais o Concluir."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.16",
         data = "31/10/2026",
-        isAtual = true,
+        isAtual = false,
         alteracoes = listOf(
             "Novo visual do episódio: título maior, etiquetas curtas, seções em um bloco só e uma cor para cada seção.",
             "Com o episódio completo, o botão principal leva ao próximo que falta. Abaixo dele ficam \"Voltar à temporada\" e as setas.",
