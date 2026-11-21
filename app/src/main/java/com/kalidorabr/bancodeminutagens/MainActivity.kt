@@ -2578,7 +2578,9 @@ fun HomeScreen(
                 Box(Modifier.transicaoTemaA(chave = selectedTab, profundidade = 0, animarEntrada = true).faixaAcimaB()) {
                     TelaEmBreveCabecalho(
                         searchQuery = searchQuery,
-                        onSearchQueryChange = { searchQuery = it }
+                        onSearchQueryChange = { searchQuery = it },
+                        // sem nenhuma série "Em breve", a busca não tem o que procurar
+                        mostrarBusca = searchQuery.isNotBlank() || seriesAtivas.any { it.status.equals("Em breve", ignoreCase = true) }
                     )
                 }
             } else {

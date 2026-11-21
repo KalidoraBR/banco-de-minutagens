@@ -62,9 +62,21 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
-        versao = "1.18",
+        versao = "1.19",
         data = "21/11/2026",
         isAtual = true,
+        alteracoes = listOf(
+            "No episódio, o botão principal fica apagado enquanto falta seção e mostra quantas faltam (\"Marque as 3 seções\", \"Falta 1 seção\").",
+            "Episódio vazio ganhou o botão \"Copiar tudo do E__\", que preenche as 3 seções com os dados do episódio anterior, e uma dica curta de como marcar.",
+            "Na temporada, o próximo episódio a fazer ganha um contorno na cor de destaque.",
+            "Grafite: pop-ups, campos de texto, menu ⋮ e a grade de episódios agora com o visual de vidro.",
+            "Grafite: o topo das telas de Ajustes (Dados e backup, Sincronização, Lixeira, Sobre, Estatísticas) tem o mesmo tom da faixa do relógio, sem emenda.",
+            "Em breve: a caixa de busca só aparece quando há séries na lista."
+        )
+    ),
+    VersaoHistoricoItem(
+        versao = "1.18",
+        data = "21/11/2026",
         alteracoes = listOf(
             "Concluir manual: com as 3 seções marcadas o episódio fica \"Parcial · falta concluir\" até você tocar em \"Concluir episódio\". Sair ou ir para o próximo não conclui mais sozinho.",
             "Menos pop-ups: avisos de sucesso saíram; as etiquetas Planilha e IntroDB giram enquanto enviam e dão um pulinho ao terminar. Só erros e o Desfazer (3 s) aparecem.",

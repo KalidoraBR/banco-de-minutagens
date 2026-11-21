@@ -7,6 +7,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -228,17 +231,26 @@ object TemaATokens {
 fun Modifier.fundoTelaTemaA(): Modifier {
     if (TemaVisual.modo != 0) return this.background(TemaATokens.DarkBackground)
     val destaque = androidx.compose.material3.MaterialTheme.colorScheme.primary
-    return this.drawBehind {
+    // As luzes são medidas pela tela inteira (não pela caixa), assim uma tela dentro de outra
+    // (ex.: Dados e backup, que começa abaixo do relógio) desenha o mesmo brilho, sem emenda no topo.
+    val tela = androidx.compose.ui.platform.LocalView.current.rootView
+    val origem = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    return this
+        .onGloballyPositioned { origem.value = it.positionInRoot() }
+        .drawBehind { clipRect {
         drawRect(TemaATokens.DarkBackground)
+        val o = origem.value
+        val lw = if (tela.width > 0) tela.width.toFloat() else size.width
+        val lh = if (tela.height > 0) tela.height.toFloat() else size.height
         fun luz(cor: Color, alfa: Float, x: Float, y: Float, raio: Float) {
-            val centro = androidx.compose.ui.geometry.Offset(size.width * x, size.height * y)
-            val r = size.width * raio
+            val centro = androidx.compose.ui.geometry.Offset(lw * x - o.x, lh * y - o.y)
+            val r = lw * raio
             drawCircle(Brush.radialGradient(listOf(cor.copy(alpha = alfa), Color.Transparent), center = centro, radius = r), radius = r, center = centro)
         }
         luz(destaque, 0.26f, 0.12f, 0.06f, 0.85f)
         luz(Color(0xFF5A6EFF), 0.17f, 0.98f, 0.45f, 0.8f)
         luz(destaque, 0.12f, 0.15f, 0.95f, 0.8f)
-    }
+    } }
 }
 
 /** Borda de vidro do Grafite: fio de luz em cima que some para baixo. Nos outros temas não faz nada. */

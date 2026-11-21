@@ -63,6 +63,8 @@ import com.kalidorabr.bancodeminutagens.model.MinutagemSecao
 import com.kalidorabr.bancodeminutagens.model.SerieProgressoUtils
 import com.kalidorabr.bancodeminutagens.model.TipoMinutagem
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Warning
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAMenuItem
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.TemaAOverflowMenu
@@ -235,6 +237,39 @@ fun EpisodioDetailTemaAScreen(
                     }
                 }
             }
+
+            // Episódio ainda vazio: atalho para copiar as 3 seções do anterior de uma vez
+            val nadaMarcado = secoes.all { it.estado == EstadoMinutagem.PENDENTE && it.tempoInicio.isBlank() && it.tempoFim.isBlank() }
+            val anteriorTemDados = minutagensAnterior.any { it.estado != EstadoMinutagem.PENDENTE }
+            if (nadaMarcado && isCopyEnabled && anteriorTemDados && rotuloAnterior.isNotBlank()) {
+                val forma = RoundedCornerShape(16.dp)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(forma)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), forma)
+                        .cliqueTemaA(onClick = { onCopyClick(null) }),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.ContentCopy, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Copiar tudo do $rotuloAnterior", color = MaterialTheme.colorScheme.primary, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                }
+            }
+            // Dica curta só enquanto nada foi marcado
+            if (nadaMarcado) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Outlined.Lightbulb, null, tint = TemaATokens.TextMuted, modifier = Modifier.padding(top = 1.dp).size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Toque numa seção para marcar o início e o fim. Se o episódio não tiver a seção, escolha \"Não possui\".",
+                        color = TemaATokens.TextGray, fontSize = 13.sp, lineHeight = 18.sp
+                    )
+                }
+            }
         }
 
         // Botão principal: com o episódio completo, leva ao que falta. Passa pelo mesmo envio do Concluir.
@@ -245,14 +280,20 @@ fun EpisodioDetailTemaAScreen(
             irTemporada -> "Ir para a $rotuloProximaTemporada"
             irEpisodio -> "Ir para o $rotuloProximo"
             esperandoConcluir -> "Concluir episódio"
-            else -> "Concluir"
+            else -> when (val faltam = secoes.count { it.estado == EstadoMinutagem.PENDENTE }) {
+                0 -> "Concluir"
+                3 -> "Marque as 3 seções"
+                1 -> "Falta 1 seção"
+                else -> "Faltam $faltam seções"
+            }
         }
+        val podeConcluir = irTemporada || irEpisodio || secoes.none { it.estado == EstadoMinutagem.PENDENTE }
         val acaoPrincipal = when {
             irTemporada -> onProximaTemporada
             irEpisodio -> onIrProximoPendente
             else -> onConcluirClick
         }
-        val iconeConcluir: (@Composable () -> Unit)? = if (irTemporada || irEpisodio) null else {
+        val iconeConcluir: (@Composable () -> Unit)? = if (irTemporada || irEpisodio || !podeConcluir) null else {
             { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
         }
         Column(
@@ -278,11 +319,11 @@ fun EpisodioDetailTemaAScreen(
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     redondo(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Anterior", isAnteriorEnabled, onAnteriorClick)
-                    TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.width(180.dp).clip(RoundedCornerShape(28.dp)), height = 56.dp, leading = iconeConcluir)
+                    TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.width(180.dp).clip(RoundedCornerShape(28.dp)), height = 56.dp, leading = iconeConcluir, enabled = podeConcluir)
                     redondo(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Próximo", isProximoEnabled, onProximoClick)
                 }
             } else {
-                TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.fillMaxWidth(), leading = iconeConcluir)
+                TemaAPrimaryButton(textoPrincipal, onClick = acaoPrincipal, modifier = Modifier.fillMaxWidth(), leading = iconeConcluir, enabled = podeConcluir)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     BotaoSetaEpTemaA(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Episódio anterior", isAnteriorEnabled, onAnteriorClick)
                     Box(

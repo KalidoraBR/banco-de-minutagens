@@ -176,7 +176,14 @@ fun CampoTemaA(
                 .height(50.dp)
                 .onFocusChanged { focado = it.isFocused }
                 .clip(shape)
-                .background(if (readOnly) TemaASheetColorsLocal.ReadOnly else TemaATokens.DarkBackground)
+                .background(
+                    when {
+                        readOnly && TemaVisual.modo == 0 -> Color.White.copy(alpha = 0.02f)
+                        readOnly -> TemaASheetColorsLocal.ReadOnly
+                        TemaVisual.modo == 0 -> Color.White.copy(alpha = 0.06f)
+                        else -> TemaATokens.DarkBackground
+                    }
+                )
                 .then(
                     when {
                         readOnly -> Modifier

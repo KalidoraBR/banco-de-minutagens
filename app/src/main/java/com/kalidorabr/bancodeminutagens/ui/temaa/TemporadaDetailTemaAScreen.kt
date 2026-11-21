@@ -116,6 +116,8 @@ fun TemporadaDetailTemaAScreen(
     }
 
     val ordenados = remember(episodios) { episodios.sortedBy { it.numero } }
+    // Próximo a fazer: o primeiro que ainda não está concluído
+    val proximoId = remember(ordenados) { ordenados.firstOrNull { it.status != StatusEpisodio.CONCLUIDO }?.id }
     val feitos = ordenados.count { it.status == StatusEpisodio.CONCLUIDO }
     val parciais = ordenados.count { it.status == StatusEpisodio.PARCIAL }
     val pendentes = ordenados.size - feitos - parciais
@@ -352,7 +354,7 @@ fun TemporadaDetailTemaAScreen(
                     val sel = ep.id in selecionados
                     // Tema B: os episódios "caem" em sequência quando a temporada abre
                     val entrada = if ((TemaVisual.b || TemaVisual.d) && i < 42) Modifier.entradaB(120 + i * (if (TemaVisual.d) 28 else 18), 14.dp, quique = true) else Modifier
-                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb, emRevisao = ep.id in emRevisaoIntroDb, enviando = ep.id in enviandoIntroDb) {
+                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb, emRevisao = ep.id in emRevisaoIntroDb, enviando = ep.id in enviandoIntroDb, proximo = ep.id == proximoId) {
                         if (selecionando) {
                             selecionados = if (sel) selecionados - ep.id else selecionados + ep.id
                         } else onEpisodioClick(ep)
@@ -527,12 +529,13 @@ private fun LegendaTemaA(texto: String, cor: Color?) {
 }
 
 @Composable
-private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, enviando: Boolean = false, onClick: () -> Unit) {
+private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, enviando: Boolean = false, proximo: Boolean = false, onClick: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
     val shape = if (TemaVisual.d) CircleShape else RoundedCornerShape(16.dp)
+    val vidro = TemaVisual.modo == 0
     val (bg, fg) = when (ep.status) {
-        StatusEpisodio.CONCLUIDO -> TemaATokens.SuccessBg to TemaATokens.SuccessText
-        StatusEpisodio.PARCIAL -> TemaATokens.WarningBg to TemaATokens.SemanticWarning
+        StatusEpisodio.CONCLUIDO -> (if (vidro) TemaATokens.SuccessText.copy(alpha = 0.13f) else TemaATokens.SuccessBg) to TemaATokens.SuccessText
+        StatusEpisodio.PARCIAL -> (if (vidro) TemaATokens.SemanticWarning.copy(alpha = 0.13f) else TemaATokens.WarningBg) to TemaATokens.SemanticWarning
         StatusEpisodio.PROXIMO -> Color.Transparent to TemaATokens.TextWhite
         StatusEpisodio.PENDENTE -> TemaATokens.DarkGraphiteSurface to TemaATokens.TextSoft
     }
@@ -545,7 +548,8 @@ private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecio
             .then(
                 when {
                     selecionado -> Modifier.border(2.dp, accent, shape)
-                    ep.status == StatusEpisodio.PROXIMO && !selecionando -> Modifier.border(2.dp, accent, shape)
+                    (ep.status == StatusEpisodio.PROXIMO || proximo) && !selecionando -> Modifier.border(2.dp, accent, shape)
+                    vidro -> Modifier.vidroTemaA(shape)
                     ep.status == StatusEpisodio.PENDENTE -> Modifier.border(1.dp, TemaATokens.DarkBorder, shape)
                     else -> Modifier
                 }

@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kalidorabr.bancodeminutagens.ui.temaa.TemaATokens
 import com.kalidorabr.bancodeminutagens.ui.temaa.TemaVisual
+import com.kalidorabr.bancodeminutagens.ui.temaa.vidroTemaA
 import androidx.compose.animation.core.spring
 
 /** Cores dos pop-ups do Tema A. */
@@ -132,6 +133,12 @@ fun TemaABottomSheet(
                     .fillMaxWidth()
                     .clip(formaSheet)
                     .background(TemaASheetColors.Sheet)
+                    .then(
+                        if (TemaVisual.modo == 0) Modifier
+                            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.015f))))
+                            .vidroTemaA(formaSheet)
+                        else Modifier
+                    )
                     .then(if (flutua) Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), formaSheet) else Modifier)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -263,7 +270,8 @@ fun TemaAGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(TemaASheetColors.Group),
+            .background(if (TemaVisual.modo == 0) Color.White.copy(alpha = 0.05f) else TemaASheetColors.Group)
+            .vidroTemaA(RoundedCornerShape(18.dp)),
         content = content
     )
 }
@@ -274,7 +282,7 @@ fun TemaAGroupDivider() {
         Modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(TemaASheetColors.GroupDivider)
+            .background(if (TemaVisual.modo == 0) Color.White.copy(alpha = 0.07f) else TemaASheetColors.GroupDivider)
     )
 }
 
@@ -324,7 +332,10 @@ fun BoxScope.TemaAOverflowMenu(
                 .width(240.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(TemaASheetColors.Group)
-                .border(1.dp, TemaATokens.Track, RoundedCornerShape(18.dp))
+                .then(
+                    if (TemaVisual.modo == 0) Modifier.vidroTemaA(RoundedCornerShape(18.dp))
+                    else Modifier.border(1.dp, TemaATokens.Track, RoundedCornerShape(18.dp))
+                )
                 .padding(6.dp)
         ) {
             items.forEach { item ->

@@ -358,7 +358,8 @@ fun StatusPillTemaA(serie: SerieItem, modifier: Modifier = Modifier, solid: Bool
 @Composable
 fun EmBreveHeaderTemaA(
     searchQuery: String = "",
-    onSearchQueryChange: (String) -> Unit = {}
+    onSearchQueryChange: (String) -> Unit = {},
+    mostrarBusca: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -366,8 +367,10 @@ fun EmBreveHeaderTemaA(
             .padding(start = TemaATokens.SideMargin, end = TemaATokens.SideMargin, top = if (TemaVisual.b) 0.dp else 16.dp, bottom = 8.dp)
     ) {
         CabecalhoPaginaTemaA("Em breve", "Estreias e séries para começar")
-        Spacer(Modifier.height(18.dp))
-        SearchFieldTemaA(searchQuery, onSearchQueryChange, "Buscar em breve")
+        if (mostrarBusca) {
+            Spacer(Modifier.height(18.dp))
+            SearchFieldTemaA(searchQuery, onSearchQueryChange, "Buscar em breve")
+        }
     }
 }
 

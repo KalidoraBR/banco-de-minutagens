@@ -254,12 +254,13 @@ fun TelaDadosBackup(
 @Composable
 fun TelaEmBreveCabecalho(
     searchQuery: String = "",
-    onSearchQueryChange: (String) -> Unit = {}
+    onSearchQueryChange: (String) -> Unit = {},
+    mostrarBusca: Boolean = true
 ) {
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> EmBreveHeaderTemaB(...)
-        else -> EmBreveHeaderTemaA(searchQuery = searchQuery, onSearchQueryChange = onSearchQueryChange)
+        else -> EmBreveHeaderTemaA(searchQuery = searchQuery, onSearchQueryChange = onSearchQueryChange, mostrarBusca = mostrarBusca)
     }
 }
 

@@ -27,8 +27,8 @@ android {
         applicationId = "com.kalidorabr.bancodeminutagens"
         minSdk = 26
         targetSdk = 37
-        versionCode = 17
-        versionName = "1.18"
+        versionCode = 18
+        versionName = "1.19"
         buildConfigField("String", "TMDB_READ_TOKEN", tmdbTokenLiteral)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
