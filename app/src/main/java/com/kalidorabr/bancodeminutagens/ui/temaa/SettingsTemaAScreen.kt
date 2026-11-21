@@ -115,7 +115,7 @@ fun SettingsTemaAScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = TemaATokens.SideMargin)
-                .padding(top = if (TemaVisual.b) 0.dp else 16.dp, bottom = 16.dp),
+                .padding(top = if (TemaVisual.b) 0.dp else 16.dp, bottom = TemaATokens.EspacoBarraAbas),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             CabecalhoPaginaTemaA("Ajustes", "")
@@ -134,6 +134,7 @@ fun SettingsTemaAScreen(
                         .fillMaxWidth()
                         .clip(TemaATokens.ShapeCardCommon)
                         .background(TemaATokens.DarkGraphiteSurface)
+                        .vidroTemaA(TemaATokens.ShapeCardCommon)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -302,7 +303,8 @@ private fun TemaAGroupCard(content: @Composable ColumnScope.() -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(TemaATokens.ShapeCardCommon)
-            .background(TemaATokens.DarkGraphiteSurface),
+            .background(TemaATokens.DarkGraphiteSurface)
+            .vidroTemaA(TemaATokens.ShapeCardCommon),
         content = content
     )
 }
@@ -351,10 +353,10 @@ fun SubtelaTemaA(
     Column(
         Modifier
             .fillMaxSize()
-            .background(TemaATokens.DarkBackground)
+            .fundoTelaTemaA()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = TemaATokens.SideMargin)
-            .padding(top = if (TemaVisual.b) 0.dp else 12.dp, bottom = 16.dp),
+            .padding(top = if (TemaVisual.b) 0.dp else 12.dp, bottom = TemaATokens.EspacoBarraAbas),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         if (TemaVisual.b) {
@@ -398,7 +400,8 @@ fun SobreTemaAScreen(
                 Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(TemaATokens.DarkGraphiteSurface),
+                    .background(TemaATokens.DarkGraphiteSurface)
+                    .vidroTemaA(RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 // Mesmo desenho do ícone do app: fundo + desenho, ampliado como na tela inicial do celular
@@ -456,6 +459,7 @@ fun SobreTemaAScreen(
                         .fillMaxWidth()
                         .clip(TemaATokens.ShapeCardCommon)
                         .background(TemaATokens.DarkGraphiteSurface)
+                        .vidroTemaA(TemaATokens.ShapeCardCommon)
                         .clickable { aberta = if (open) null else v.versao }
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -513,7 +517,7 @@ fun DadosBackupTemaAScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OverlineTemaA("Resumo do catálogo")
                 Column(
-                    Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+                    Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Row {
@@ -668,7 +672,7 @@ fun LixeiraTemaAScreen(
                 OverlineTemaA("Séries na lixeira · ${seriesLixeira.size}")
                 seriesLixeira.forEach { s ->
                     Row(
-                        Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(12.dp),
+                        Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(Modifier.width(44.dp).height(62.dp).clip(RoundedCornerShape(8.dp)).background(TemaATokens.DarkCardSurface)) {

@@ -365,7 +365,7 @@ fun GoogleSheetsTemaAScreen(
             }
             // Estado da conexão
             Column(
-                Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+                Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val masked = if (spreadsheetId.length > 4) "••••" + spreadsheetId.takeLast(4) else spreadsheetId
@@ -417,7 +417,7 @@ fun GoogleSheetsTemaAScreen(
 
             // Sincronização automática
             Row(
-                Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+                Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -658,7 +658,7 @@ private fun BlocoIntroDbTemaA(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OverlineTemaA("IntroDB")
         Column(
-            Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+            Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

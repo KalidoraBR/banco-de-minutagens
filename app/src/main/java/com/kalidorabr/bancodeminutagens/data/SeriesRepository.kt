@@ -168,6 +168,7 @@ class SeriesRepository(context: Context) {
         json.put("status", ep.status.name)
         json.put("dataExibicao", ep.dataExibicao)
         if (ep.duracaoMin > 0) json.put("duracaoMin", ep.duracaoMin)
+        if (ep.aguardandoConcluir) json.put("aguardandoConcluir", true)
 
         val minutagensArr = JSONArray()
         for (min in ep.minutagens) {
@@ -287,7 +288,8 @@ class SeriesRepository(context: Context) {
             status = statusEnum,
             dataExibicao = json.optString("dataExibicao", ""),
             duracaoMin = json.optInt("duracaoMin", 0),
-            minutagens = minutagensList
+            minutagens = minutagensList,
+            aguardandoConcluir = json.optBoolean("aguardandoConcluir", false)
         )
     }
 

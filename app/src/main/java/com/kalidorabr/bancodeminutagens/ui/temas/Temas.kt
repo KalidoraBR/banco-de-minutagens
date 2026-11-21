@@ -81,11 +81,8 @@ fun ProvedorTemaNovo(modo: VisualMode, corDestaque: AppThemeOpcao, content: @Com
     val m = TemaVisual.de(modo)
     if (TemaVisual.modo != m) TemaVisual.modo = m
     CompositionLocalProvider(LocalModoVisual provides modo) {
-        when (modo) {
-            VisualMode.TEMA_B -> TemaATypographyProvider(corDestaque) {
-                content()
-            }
-            else -> TemaATypographyProvider(corDestaque, content)
-        }
+        // Um único caminho para os 4 temas: com dois caminhos, trocar para/de um tema recriava as telas
+        // e o app voltava para a Início em vez de continuar em Ajustes.
+        TemaATypographyProvider(corDestaque, content)
     }
 }

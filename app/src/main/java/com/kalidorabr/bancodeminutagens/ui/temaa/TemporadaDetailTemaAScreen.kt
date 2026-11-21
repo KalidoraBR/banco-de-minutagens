@@ -1,5 +1,8 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -91,6 +94,7 @@ fun TemporadaDetailTemaAScreen(
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
     emRevisaoIntroDb: Set<String> = emptySet(),
+    enviandoIntroDb: Set<String> = emptySet(),
     onConferirIntroDb: () -> Unit = {},
     temporadaAnterior: String? = null,
     temporadaProxima: String? = null,
@@ -132,7 +136,7 @@ fun TemporadaDetailTemaAScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(TemaATokens.DarkBackground)
+            .fundoTelaTemaA()
             .ambienteC()
     ) {
         Column(
@@ -250,6 +254,7 @@ fun TemporadaDetailTemaAScreen(
                     .fillMaxWidth()
                     .clip(TemaATokens.ShapeCardCommon)
                     .background(TemaATokens.DarkGraphiteSurface)
+                    .vidroTemaA(TemaATokens.ShapeCardCommon)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -347,7 +352,7 @@ fun TemporadaDetailTemaAScreen(
                     val sel = ep.id in selecionados
                     // Tema B: os episódios "caem" em sequência quando a temporada abre
                     val entrada = if ((TemaVisual.b || TemaVisual.d) && i < 42) Modifier.entradaB(120 + i * (if (TemaVisual.d) 28 else 18), 14.dp, quique = true) else Modifier
-                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb, emRevisao = ep.id in emRevisaoIntroDb) {
+                    CelulaEpisodioTemaA(ep, selecionando, sel, Modifier.animateItem().then(entrada), noSite = ep.id in noIntroDb, emRevisao = ep.id in emRevisaoIntroDb, enviando = ep.id in enviandoIntroDb) {
                         if (selecionando) {
                             selecionados = if (sel) selecionados - ep.id else selecionados + ep.id
                         } else onEpisodioClick(ep)
@@ -362,7 +367,11 @@ fun TemporadaDetailTemaAScreen(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(TemaATokens.DarkBackground)
+                    .background(
+                        // Grafite: a faixa some em degradê para as luzes do fundo continuarem aparecendo
+                        if (TemaVisual.modo == 0) androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, TemaATokens.DarkBackground.copy(alpha = 0.92f), TemaATokens.DarkBackground.copy(alpha = 0.92f)))
+                        else androidx.compose.ui.graphics.SolidColor(TemaATokens.DarkBackground)
+                    )
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
@@ -518,7 +527,7 @@ private fun LegendaTemaA(texto: String, cor: Color?) {
 }
 
 @Composable
-private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, onClick: () -> Unit) {
+private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecionado: Boolean, modifier: Modifier, noSite: Boolean = false, emRevisao: Boolean = false, enviando: Boolean = false, onClick: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
     val shape = if (TemaVisual.d) CircleShape else RoundedCornerShape(16.dp)
     val (bg, fg) = when (ep.status) {
@@ -547,7 +556,14 @@ private fun CelulaEpisodioTemaA(ep: EpisodioItem, selecionando: Boolean, selecio
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(ep.numeroFormatado, color = fg, fontFamily = TemaATokens.FontMono, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             if (!selecionado) {
-                if (emRevisao) NuvemRevisaoTemaA(Modifier.size(16.dp))
+                if (enviando) {
+                    // indo ao IntroDB agora: a nuvem gira até terminar
+                    val giro by androidx.compose.animation.core.rememberInfiniteTransition(label = "nuvemEnviando").animateFloat(
+                        0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.LinearEasing)), label = "giro"
+                    )
+                    Icon(Icons.Outlined.Sync, "Enviando ao IntroDB", tint = fg, modifier = Modifier.size(15.dp).graphicsLayer { rotationZ = -giro })
+                }
+                else if (emRevisao) NuvemRevisaoTemaA(Modifier.size(16.dp))
                 else if (noSite) Icon(Icons.Outlined.CloudDone, "Já no IntroDB", tint = fg.copy(alpha = 0.85f), modifier = Modifier.size(15.dp))
             }
         }

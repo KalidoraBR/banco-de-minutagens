@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,12 +41,13 @@ fun HomeBottomNavigationTemaA(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(TemaATokens.DarkBackground)
             .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
             .height(TemaATokens.HeightBottomNav)
             .clip(shape)
-            .background(TemaATokens.NavSurface)
-            .border(1.dp, TemaATokens.DarkBorder, shape)
+            // vidro: base grafite translúcida + clarão de cima para baixo + fio de luz na borda
+            .background(Color(0xD9181920))
+            .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.03f))))
+            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.26f), Color.White.copy(alpha = 0.06f))), shape)
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
@@ -58,11 +61,12 @@ fun HomeBottomNavigationTemaA(
 
 @Composable
 private fun NavItemTemaA(painter: Painter, label: String, selected: Boolean, onClick: () -> Unit) {
+    val destaque = androidx.compose.material3.MaterialTheme.colorScheme.primary
     Row(
         modifier = Modifier
             .height(44.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(if (selected) TemaATokens.TextWhite else TemaATokens.NavSurface.copy(alpha = 0f))
+            .background(if (selected) destaque else Color.Transparent)
             .clickable(onClick = onClick)
             .animateContentSize(tween(200))
             .padding(horizontal = if (selected) 16.dp else 11.dp),
@@ -71,12 +75,12 @@ private fun NavItemTemaA(painter: Painter, label: String, selected: Boolean, onC
         Icon(
             painter = painter,
             contentDescription = label,
-            tint = if (selected) TemaATokens.DarkBackground else TemaATokens.TextGray,
+            tint = if (selected) Color.White else TemaATokens.TextGray,
             modifier = Modifier.size(22.dp)
         )
         if (selected) {
             Spacer(Modifier.width(8.dp))
-            Text(label, color = TemaATokens.DarkBackground, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
         }
     }
 }

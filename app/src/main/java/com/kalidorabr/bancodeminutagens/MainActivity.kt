@@ -101,6 +101,7 @@ import com.kalidorabr.bancodeminutagens.ui.temas.TelaInicioCabecalho
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaLixeira
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaSerie
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaLinhaSerie
+import com.kalidorabr.bancodeminutagens.ui.temaa.fundoTelaTemaA
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaAjustes
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaSobre
 import com.kalidorabr.bancodeminutagens.ui.temas.TelaTemporada
@@ -387,6 +388,8 @@ fun BancoDeMinutagensApp(
     // Pop-up "esse trecho já foi para o IntroDB, quer enviar de novo?"
     var perguntaReenvio by remember { mutableStateOf<PerguntaReenvio?>(null) }
     var enviandoIntroDb by remember { mutableStateOf(false) }
+    // episódios que estão indo ao IntroDB agora: as etiquetas e as nuvens giram enquanto isso
+    var enviandoIdsIntroDb by remember { mutableStateOf(emptySet<String>()) }
     var progressoIntroDb by remember { mutableStateOf<ProgressoIntroDb?>(null) }
     var autoIntroDb by remember { mutableStateOf(introDbPrefs.automatico()) }
     // muda quando a conferência ou um envio termina, para as telas relerem o que está no site
@@ -842,6 +845,7 @@ fun BancoDeMinutagensApp(
             return
         }
         enviandoIntroDb = true
+        enviandoIdsIntroDb = novos.map { it.episodioId }.toSet()
         mostrar("Preparando…", abrir = true)
         coroutineScope.launch {
             var aviso: String? = null
@@ -876,6 +880,7 @@ fun BancoDeMinutagensApp(
                 }
             } finally {
                 enviandoIntroDb = false
+                enviandoIdsIntroDb = emptySet()
                 marcaIntroDb++
                 mostrar(terminado = true, aviso = aviso)
                 val enviados = novos.filter { n -> itens.any { it.rotulo == n.rotulo && it.estado == EstadoItemIntroDb.ENVIADO } }
@@ -897,7 +902,6 @@ fun BancoDeMinutagensApp(
                     avisoIntroDb = when {
                         problema != null -> Triple("IntroDB: não enviado", problema, TipoAvisoTemaA.ERRO)
                         itens.any { it.estado == EstadoItemIntroDb.ERRO } -> Triple("IntroDB: $ok enviada(s), com erro", "Tente pelo menu ⋮ da temporada.", TipoAvisoTemaA.ATENCAO)
-                        ok > 0 -> Triple("Enviado ao IntroDB", novos.first().rotulo.substringBefore(" ·"), TipoAvisoTemaA.SUCESSO)
                         else -> null
                     }
                 }
@@ -1026,7 +1030,8 @@ fun BancoDeMinutagensApp(
                                     it.estado == EstadoMinutagem.PREENCHIDO ||
                                         it.estado == EstadoMinutagem.NAO_POSSUI
                                 } == 3
-                                ep.copy(minutagens = novasMinutagens)
+                                // só o botão Concluir finaliza o episódio
+                                ep.copy(minutagens = novasMinutagens, aguardandoConcluir = true)
                             }
                         }
                         temporada.copy(episodios = novosEpisodios)
@@ -1067,10 +1072,29 @@ fun BancoDeMinutagensApp(
             )
             saveUndoSincronizou = episodioCompleto
             saveUndoJob = coroutineScope.launch {
-                delay(5000)
+                delay(3000)
                 pendingUndoSaveState = null
             }
         }
+    }
+
+    // Botão Concluir: o episódio completo deixa de esperar e passa a contar como concluído
+    fun concluirEpisodio(serieId: String, temporadaId: String, episodioId: String) {
+        val novasSeries = seriesListState.map { serie ->
+            if (serie.id != serieId) serie else SerieProgressoUtils.recalcularProgressoSerie(
+                serie.copy(
+                    lastUpdatedAt = System.currentTimeMillis(),
+                    temporadas = serie.temporadas.map { t ->
+                        if (t.id != temporadaId) t else t.copy(episodios = t.episodios.map { ep ->
+                            if (ep.id == episodioId) ep.copy(aguardandoConcluir = false) else ep
+                        })
+                    }
+                )
+            )
+        }
+        val antes = seriesListState
+        atualizarESalvarSeries(novasSeries)
+        registrarProgresso(antes)
     }
 
     // Volta a seção para como estava antes do último "Salvar"
@@ -1126,7 +1150,7 @@ fun BancoDeMinutagensApp(
                         temporada.copy(
                             episodios = temporada.episodios.map { episodio ->
                                 if (episodio.id == episodioId) {
-                                    episodio.copy(minutagens = minutagensCopiadas)
+                                    episodio.copy(minutagens = minutagensCopiadas, aguardandoConcluir = true)
                                 } else {
                                     episodio
                                 }
@@ -1297,7 +1321,8 @@ fun BancoDeMinutagensApp(
                                 }
                                 ep.copy(
                                     status = StatusEpisodio.PENDENTE,
-                                    minutagens = minutagensLimpas
+                                    minutagens = minutagensLimpas,
+                                    aguardandoConcluir = false
                                 )
                             }
                         }
@@ -1495,10 +1520,13 @@ fun BancoDeMinutagensApp(
             val activeTemporada = activeSerie?.temporadas?.firstOrNull { it.id == alvo.temporadaId }
             val activeEpisodio = activeTemporada?.episodios?.firstOrNull { it.id == alvo.episodioId }
             if (selectedEpisodioId != null && activeSerie != null && activeTemporada != null && activeEpisodio != null) {
+                val esperandoConcluir = activeEpisodio.aguardandoConcluir && activeEpisodio.minutagens.count {
+                    it.estado == EstadoMinutagem.PREENCHIDO || it.estado == EstadoMinutagem.NAO_POSSUI
+                } == 3
                 val statusLabel = when (activeEpisodio.status) {
                     StatusEpisodio.CONCLUIDO -> "Concluído"
                     StatusEpisodio.PROXIMO -> "Próximo"
-                    StatusEpisodio.PARCIAL -> "Parcial"
+                    StatusEpisodio.PARCIAL -> if (esperandoConcluir) "Parcial · falta concluir" else "Parcial"
                     StatusEpisodio.PENDENTE -> "Pendente"
                 }
 
@@ -1615,11 +1643,9 @@ fun BancoDeMinutagensApp(
                     rotuloAnterior = episodioAnterior?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
                     rotuloProximo = proximoPendente?.let { "E" + it.numero.toString().padStart(2, '0') }.orEmpty(),
                     onIrProximoPendente = {
-                        processarConcluir()
                         proximoPendente?.let { selectedEpisodioId = it.id }
                     },
                     onVoltarTemporada = {
-                        processarConcluir()
                         selectedEpisodioId = null
                     },
                     temporadaCompleta = episodiosOrdenados.none(faltaMinutar),
@@ -1627,7 +1653,6 @@ fun BancoDeMinutagensApp(
                         SerieProgressoUtils.numeroTemporada(t.numero)?.let { "T" + it.toString().padStart(2, '0') } ?: t.numero
                     }.orEmpty(),
                     onProximaTemporada = {
-                        processarConcluir()
                         proximaTemporada?.let {
                             selectedEpisodioId = null
                             selectedTemporadaId = it.id
@@ -1643,15 +1668,17 @@ fun BancoDeMinutagensApp(
                             marcaSync
                             val pendentes = prefs.episodiosPendentes()
                             // sem lista (mudança feita antes desta versão): vale o aviso geral
-                            if (activeEpisodio.id in pendentes || (pendentes.isEmpty() && cfg.hasPendingExport)) "Pendente" else "Sincronizado"
+                            if (isAutoSyncingNow) "Enviando"
+                            else if (activeEpisodio.id in pendentes || (pendentes.isEmpty() && cfg.hasPendingExport)) "Pendente" else "Sincronizado"
                         }
                     },
                     onTocarPlanilha = { coroutineScope.launch { executarAutoExportacao(forcar = true) } },
                     onTocarIntroDb = { enviarAoIntroDb(activeSerie.id, activeTemporada.id, setOf(activeEpisodio.id)) },
-                    statusIntroDb = remember(marcaIntroDb, activeEpisodio) {
+                    statusIntroDb = remember(marcaIntroDb, activeEpisodio, enviandoIdsIntroDb) {
                         val noSite = introDbPrefs.noSite(activeEpisodio.id)
                         when {
                             activeEpisodio.minutagens.all { it.estado == EstadoMinutagem.PENDENTE } -> null
+                            activeEpisodio.id in enviandoIdsIntroDb -> "Enviando"
                             introDbPrefs.emRevisao(activeEpisodio.id) -> "Em revisão"
                             noSite.isNotEmpty() -> "Publicado"
                             chaveIntroDb.isNotBlank() -> "Não enviado"
@@ -1683,9 +1710,16 @@ fun BancoDeMinutagensApp(
                     },
                     onConcluirClick = {
                         processarConcluir()
-                        // Modo maratona: segue para o próximo episódio; senão volta para a temporada
-                        selectedEpisodioId = if (maratona && hasProximo) episodiosOrdenados[currentIndex + 1].id else null
+                        if (esperandoConcluir) {
+                            // Completo: conclui e fica no episódio; as etiquetas mostram o envio e o botão vira "Ir para o próximo"
+                            concluirEpisodio(activeSerie.id, activeTemporada.id, activeEpisodio.id)
+                            if (maratona && hasProximo) selectedEpisodioId = episodiosOrdenados[currentIndex + 1].id
+                        } else {
+                            // Modo maratona: segue para o próximo episódio; senão volta para a temporada
+                            selectedEpisodioId = if (maratona && hasProximo) episodiosOrdenados[currentIndex + 1].id else null
+                        }
                     },
+                    esperandoConcluir = esperandoConcluir,
                     duracaoTipicaEditando = selectedSecaoTipo?.let { tipo ->
                         com.kalidorabr.bancodeminutagens.model.AvisoTempo.duracaoTipica(activeSerie, tipo, activeEpisodio.id)
                     }
@@ -1747,8 +1781,9 @@ fun BancoDeMinutagensApp(
                         }
                     },
                     onEnviarIntroDbConfirmed = { episodioIds ->
-                        enviarAoIntroDb(activeSerie.id, activeTemporada.id, episodioIds)
-                    }
+                        enviarAoIntroDb(activeSerie.id, activeTemporada.id, episodioIds, comPopup = false)
+                    },
+                    enviandoIntroDb = enviandoIdsIntroDb
                 )
             } else if (selectedSerieId != null && activeSerie != null) {
                 TelaSerie(
@@ -2016,11 +2051,11 @@ fun BancoDeMinutagensApp(
                         is EpisodeFeedback.Error -> Triple(fb.message, "", TipoAvisoTemaA.ERRO)
                         else -> Triple("", "", TipoAvisoTemaA.SUCESSO)
                     }
-                    TelaAviso(
+                    if (tipo == TipoAvisoTemaA.ERRO) TelaAviso(
                         titulo = titulo,
                         subtitulo = sub,
                         tipo = tipo,
-                        acao = if (tipo == TipoAvisoTemaA.ERRO) "OK" else null,
+                        acao = "OK",
                         onAcao = { currentFeedback = EpisodeFeedback.None }
                     )
                 }
@@ -2327,11 +2362,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    when (visualMode) {
-                        else -> Paletas.de(visualMode).fundo
-                    }
-                )
+                .then(if (visualMode == VisualMode.TEMA_A) Modifier.fundoTelaTemaA() else Modifier.background(Paletas.de(visualMode).fundo))
                 .topoEscuroB()
                 .statusBarsPadding()
                 .navigationBarsPadding()
@@ -2435,14 +2466,12 @@ fun HomeScreen(
         )
     }
 
+    // A barra de abas flutua por cima do conteúdo (as listas rolam por trás dela)
+    Box(Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                when (visualMode) {
-                    else -> Paletas.de(visualMode).fundo
-                }
-            )
+            .then(if (visualMode == VisualMode.TEMA_A) Modifier.fundoTelaTemaA() else Modifier.background(Paletas.de(visualMode).fundo))
             .then(if (visualMode == VisualMode.TEMA_D) Modifier.ambienteC() else Modifier)
             .topoEscuroB()
             .then(if (visualMode == VisualMode.TEMA_C && selectedTab == 0) Modifier else Modifier.statusBarsPadding())
@@ -2599,6 +2628,7 @@ fun HomeScreen(
                 }
             } else {
                 LazyColumn(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = TemaATokens.EspacoBarraAbas),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -2639,8 +2669,10 @@ fun HomeScreen(
             }
         }
 
+    }
         when (visualMode) {
             else -> androidx.compose.animation.AnimatedVisibility(
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
                 visible = (visualMode != VisualMode.TEMA_B || barraAbasVisivel) && com.kalidorabr.bancodeminutagens.ui.temaa.components.SheetsAbertos.quantos == 0,
                 enter = androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(260, easing = com.kalidorabr.bancodeminutagens.ui.temab.EasingFirmeB)) +
                     androidx.compose.animation.slideInVertically(androidx.compose.animation.core.tween(260, easing = com.kalidorabr.bancodeminutagens.ui.temab.EasingFirmeB)) { it },

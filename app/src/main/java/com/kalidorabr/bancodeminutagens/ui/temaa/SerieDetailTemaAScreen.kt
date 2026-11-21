@@ -110,7 +110,7 @@ fun SerieDetailTemaAScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(TemaATokens.DarkBackground)
+            .fundoTelaTemaA()
     ) {
         Column(
             Modifier
@@ -243,6 +243,7 @@ fun SerieDetailTemaAScreen(
                         .fillMaxWidth()
                         .clip(TemaATokens.ShapeCardCommon)
                         .background(TemaATokens.DarkGraphiteSurface)
+                        .vidroTemaA(TemaATokens.ShapeCardCommon)
                         .padding(vertical = 14.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -425,6 +426,7 @@ internal fun TemporadaLinhaTemaA(temp: TemporadaItem, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(TemaATokens.ShapeCardCommon)
             .background(TemaATokens.DarkGraphiteSurface)
+            .vidroTemaA(TemaATokens.ShapeCardCommon)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

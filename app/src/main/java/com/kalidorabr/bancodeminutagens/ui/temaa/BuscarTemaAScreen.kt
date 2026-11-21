@@ -122,7 +122,7 @@ fun BuscarTemaAScreen(
     Column(
         modifier
             .fillMaxSize()
-            .background(TemaATokens.DarkBackground)
+            .fundoTelaTemaA()
             .imePadding()
             .padding(top = if (TemaVisual.b) 0.dp else 16.dp)
     ) {
@@ -192,7 +192,7 @@ fun BuscarTemaAScreen(
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = TemaATokens.SideMargin, end = TemaATokens.SideMargin, top = 18.dp, bottom = 16.dp),
+                    contentPadding = PaddingValues(start = TemaATokens.SideMargin, end = TemaATokens.SideMargin, top = 18.dp, bottom = TemaATokens.EspacoBarraAbas),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     item { OverlineTemaA("Resultados · ${e.series.size}") }
@@ -226,7 +226,7 @@ private fun VazioBuscaTemaA(titulo: String, texto: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
-        Box(Modifier.size(72.dp).clip(CircleShape).background(TemaATokens.DarkGraphiteSurface), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(72.dp).clip(CircleShape).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Filled.Search, null, tint = TemaATokens.TextGray, modifier = Modifier.size(30.dp))
         }
         Text(titulo, color = TemaATokens.TextWhite, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
@@ -238,7 +238,7 @@ private fun VazioBuscaTemaA(titulo: String, texto: String) {
 private fun ResultadoBuscaTemaA(serie: TmdbSerieResultado, jaSalva: Boolean, adicionando: Boolean, onAdicionar: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
     Row(
-        Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(12.dp),
+        Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(Modifier.width(56.dp).height(84.dp).clip(RoundedCornerShape(10.dp)).background(TemaATokens.DarkCardSurface)) {

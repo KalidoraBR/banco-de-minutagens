@@ -239,7 +239,8 @@ fun ContinueCardTemaA(
                 .fillMaxWidth()
                 .cliqueTemaA(onClick = onOpenSerieClick)
                 .clip(TemaATokens.ShapeCardFeatured)
-                .background(TemaATokens.DarkCardSurface)
+                .background(TemaATokens.SuperficieSolida)
+                .vidroTemaA(TemaATokens.ShapeCardFeatured)
         ) {
             Box(
                 modifier = Modifier
@@ -260,8 +261,8 @@ fun ContinueCardTemaA(
                         .background(
                             Brush.verticalGradient(
                                 0.25f to Color.Transparent,
-                                0.70f to TemaATokens.DarkCardSurface.copy(alpha = 0.85f),
-                                1f to TemaATokens.DarkCardSurface
+                                0.70f to TemaATokens.SuperficieSolida.copy(alpha = 0.85f),
+                                1f to TemaATokens.SuperficieSolida
                             )
                         )
                 )
@@ -462,11 +463,20 @@ fun SerieTemaACardItem(
     val destino = remember(serie, cardVaiAoEpisodio) {
         if (cardVaiAoEpisodio) SerieProgressoUtils.encontrarProximoEpisodio(serie) else null
     }
+    val vidro = TemaVisual.modo == 0
     Row(
         modifier = modifier
+            .then(
+                if (vidro) Modifier
+                    .padding(horizontal = TemaATokens.SideMargin, vertical = 5.dp)
+                    .clip(TemaATokens.ShapeCardCommon)
+                    .background(TemaATokens.DarkGraphiteSurface)
+                    .vidroTemaA(TemaATokens.ShapeCardCommon)
+                else Modifier
+            )
             .cliqueTemaA { if (destino != null) onContinueClick(destino) else onOpenSerieClick(serie) }
             .fillMaxWidth()
-            .padding(horizontal = TemaATokens.SideMargin, vertical = 10.dp),
+            .padding(horizontal = if (vidro) 10.dp else TemaATokens.SideMargin, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val poster = serie.posterUrl.ifBlank { serie.imageUrl }

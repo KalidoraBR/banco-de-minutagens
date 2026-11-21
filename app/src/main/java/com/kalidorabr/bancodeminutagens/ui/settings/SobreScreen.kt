@@ -62,9 +62,21 @@ data class VersaoHistoricoItem(
 
 val historicoVersoesApp = listOf(
     VersaoHistoricoItem(
+        versao = "1.18",
+        data = "21/11/2026",
+        isAtual = true,
+        alteracoes = listOf(
+            "Concluir manual: com as 3 seções marcadas o episódio fica \"Parcial · falta concluir\" até você tocar em \"Concluir episódio\". Sair ou ir para o próximo não conclui mais sozinho.",
+            "Menos pop-ups: avisos de sucesso saíram; as etiquetas Planilha e IntroDB giram enquanto enviam e dão um pulinho ao terminar. Só erros e o Desfazer (3 s) aparecem.",
+            "Tocar na etiqueta IntroDB abre o detalhe do envio; o envio pelo menu da temporada não abre mais janela e a nuvem gira enquanto envia.",
+            "Tema Grafite novo, com relevo de vidro: fundo com brilho suave, cartões translúcidos e barra de abas de vidro com a aba ativa na cor de destaque.",
+            "A barra de abas agora flutua sobre o conteúdo nos 4 temas.",
+            "Trocar de tema mantém você na tela de Ajustes."
+        )
+    ),
+    VersaoHistoricoItem(
         versao = "1.17",
         data = "10/11/2026",
-        isAtual = true,
         alteracoes = listOf(
             "Sua própria planilha: em Ajustes › Sincronização › Editar conexão, o passo a passo \"Como criar minha planilha\" e o botão Copiar código montam uma planilha do Google Sheets em poucos minutos.",
             "O campo da planilha aceita o link inteiro; o app tira o ID sozinho.",

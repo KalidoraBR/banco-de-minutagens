@@ -100,7 +100,7 @@ private fun SairTemaA(onFicar: () -> Unit, onSair: () -> Unit) {
             }
             .fillMaxWidth()
             .clip(RoundedCornerShape(26.dp))
-            .background(TemaATokens.DarkCardSurface)
+            .background(TemaATokens.SuperficieSolida)
             .padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -266,7 +266,7 @@ private fun PerguntaEscura(modo: VisualMode, titulo: String, texto: String, nao:
             }
             .fillMaxWidth()
             .clip(forma)
-            .background(TemaATokens.DarkCardSurface)
+            .background(TemaATokens.SuperficieSolida)
             .then(if (d) Modifier.border(1.dp, accent.copy(alpha = 0.5f), forma) else Modifier)
             .padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally

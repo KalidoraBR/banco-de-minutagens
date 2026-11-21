@@ -115,7 +115,7 @@ object SerieProgressoUtils {
     fun calcularStatusEpisodio(episodio: EpisodioItem): StatusEpisodio {
         if (TipoMinutagem.entries.all { tipo ->
             episodio.minutagens.firstOrNull { it.tipo == tipo }?.let(::isSecaoConcluida) == true
-        }) return StatusEpisodio.CONCLUIDO
+        }) return if (episodio.aguardandoConcluir) StatusEpisodio.PARCIAL else StatusEpisodio.CONCLUIDO
         return if (episodio.minutagens.any(::temHistorico)) StatusEpisodio.PARCIAL else StatusEpisodio.PENDENTE
     }
 

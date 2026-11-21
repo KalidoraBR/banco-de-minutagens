@@ -1,5 +1,8 @@
 package com.kalidorabr.bancodeminutagens.ui.temaa
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.kalidorabr.bancodeminutagens.ui.temaa.components.cliqueTemaA
@@ -110,6 +113,8 @@ fun EpisodioDetailTemaAScreen(
     rotuloProximaTemporada: String = "",
     onProximaTemporada: () -> Unit = {},
     onIrProximoPendente: () -> Unit = {},
+    /** As 3 seções estão marcadas, mas o usuário ainda não tocou em Concluir. */
+    esperandoConcluir: Boolean = false,
     onVoltarTemporada: () -> Unit = onBackClick,
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
@@ -138,7 +143,7 @@ fun EpisodioDetailTemaAScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(TemaATokens.DarkBackground)
+            .fundoTelaTemaA()
             .ambienteC()
     ) {
         Column(
@@ -213,7 +218,7 @@ fun EpisodioDetailTemaAScreen(
             if (introDbResumo != null) CartaoIntroDbTemaA(introDbResumo, onUsarIntroDb)
 
             Column(
-                if (TemaVisual.d) Modifier else Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface),
+                if (TemaVisual.d) Modifier else Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon),
                 verticalArrangement = Arrangement.spacedBy(if (TemaVisual.d) 8.dp else 0.dp)
             ) {
                 secoes.forEachIndexed { i, s ->
@@ -233,12 +238,13 @@ fun EpisodioDetailTemaAScreen(
         }
 
         // Botão principal: com o episódio completo, leva ao que falta. Passa pelo mesmo envio do Concluir.
-        val concluidoAgora = secoes.all { it.estado != EstadoMinutagem.PENDENTE }
+        val concluidoAgora = secoes.all { it.estado != EstadoMinutagem.PENDENTE } && !esperandoConcluir
         val irTemporada = concluidoAgora && temporadaCompleta && rotuloProximaTemporada.isNotBlank()
         val irEpisodio = concluidoAgora && !temporadaCompleta && rotuloProximo.isNotBlank()
         val textoPrincipal = when {
             irTemporada -> "Ir para a $rotuloProximaTemporada"
             irEpisodio -> "Ir para o $rotuloProximo"
+            esperandoConcluir -> "Concluir episódio"
             else -> "Concluir"
         }
         val acaoPrincipal = when {
@@ -253,7 +259,11 @@ fun EpisodioDetailTemaAScreen(
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(TemaATokens.DarkBackground)
+                .background(
+                    // Grafite: a faixa some em degradê para as luzes do fundo continuarem aparecendo
+                    if (TemaVisual.modo == 0) androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, TemaATokens.DarkBackground.copy(alpha = 0.92f), TemaATokens.DarkBackground.copy(alpha = 0.92f)))
+                    else androidx.compose.ui.graphics.SolidColor(TemaATokens.DarkBackground)
+                )
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -349,21 +359,24 @@ private fun EtiquetasEpisodioTemaA(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val (fgStatus, bgStatus) = when (status) {
-            "Concluído" -> TemaATokens.SuccessText to TemaATokens.SuccessBg
-            "Parcial" -> TemaATokens.SemanticWarning to TemaATokens.WarningBg
-            "Próximo" -> TemaATokens.ErroTexto to TemaATokens.ErroFundo
+        val (fgStatus, bgStatus) = when {
+            status == "Concluído" -> TemaATokens.SuccessText to TemaATokens.SuccessBg
+            status.startsWith("Parcial") -> TemaATokens.SemanticWarning to TemaATokens.WarningBg
+            status == "Próximo" -> TemaATokens.ErroTexto to TemaATokens.ErroFundo
             else -> TemaATokens.TextSoft to TemaATokens.DarkCardSurface
         }
         EtiquetaTemaA(status, status, fgStatus, bgStatus)
         if (temporadaCompleta) EtiquetaTemaA("Temporada completa", "Temporada completa", TemaATokens.SuccessText, TemaATokens.SuccessBg)
         if (planilha != null) {
             val pendente = planilha == "Pendente"
+            val enviando = planilha == "Enviando"
             EtiquetaTemaA(
                 "Planilha", "Planilha: $planilha",
-                if (pendente) TemaATokens.SemanticWarning else TemaATokens.SuccessText,
-                if (pendente) TemaATokens.WarningBg else TemaATokens.SuccessBg,
-                if (pendente) onTocarPlanilha else null
+                when { enviando -> TemaATokens.TextSoft; pendente -> TemaATokens.SemanticWarning; else -> TemaATokens.SuccessText },
+                when { enviando -> TemaATokens.DarkCardSurface; pendente -> TemaATokens.WarningBg; else -> TemaATokens.SuccessBg },
+                if (pendente) onTocarPlanilha else null,
+                trabalhando = enviando,
+                feito = planilha == "Sincronizado"
             )
         }
         if (introDb != null) {
@@ -372,23 +385,49 @@ private fun EtiquetasEpisodioTemaA(
                 "Em revisão" -> AzulRevisaoTemaA to AzulRevisaoTemaA.copy(alpha = 0.14f)
                 else -> TemaATokens.TextGray to TemaATokens.DarkCardSurface
             }
-            EtiquetaTemaA("IntroDB", "IntroDB: $introDb", fg, bg, if (introDb == "Não enviado") onTocarIntroDb else null)
+            // tocar mostra o detalhe do envio (o que foi, o que falta, o que deu erro)
+            EtiquetaTemaA(
+                "IntroDB", "IntroDB: $introDb", fg, bg, onTocarIntroDb,
+                trabalhando = introDb == "Enviando",
+                feito = introDb == "Publicado" || introDb == "Em revisão"
+            )
         }
     }
 }
 
 @Composable
-private fun EtiquetaTemaA(texto: String, descricao: String, fg: Color, bg: Color, onClick: (() -> Unit)? = null) {
-    Text(
-        if (onClick != null) "$texto ›" else texto,
-        color = fg, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-        modifier = Modifier
+private fun EtiquetaTemaA(
+    texto: String, descricao: String, fg: Color, bg: Color, onClick: (() -> Unit)? = null,
+    trabalhando: Boolean = false, feito: Boolean = false
+) {
+    // Terminou de enviar: a etiqueta cresce um pouco e volta, no lugar de um pop-up de "enviado"
+    val escala = remember { androidx.compose.animation.core.Animatable(1f) }
+    var estavaTrabalhando by remember { mutableStateOf(trabalhando) }
+    LaunchedEffect(trabalhando, feito) {
+        if (estavaTrabalhando && !trabalhando && feito) {
+            escala.animateTo(1.14f, androidx.compose.animation.core.tween(160))
+            escala.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.45f, stiffness = 380f))
+        }
+        estavaTrabalhando = trabalhando
+    }
+    Row(
+        Modifier
+            .graphicsLayer { scaleX = escala.value; scaleY = escala.value }
             .clip(CircleShape)
             .background(bg)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .semantics { contentDescription = descricao }
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    )
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (trabalhando) {
+            CircularProgressIndicator(color = fg, strokeWidth = 1.6.dp, modifier = Modifier.size(11.dp))
+            Spacer(Modifier.width(6.dp))
+        } else if (feito) {
+            Text("✓ ", color = fg, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+        Text(if (onClick != null) "$texto ›" else texto, color = fg, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
 }
 
 /** Cor de cada seção. Encerramento: lilás, ou ciano quando a cor de destaque já é roxa. */
@@ -752,6 +791,7 @@ private fun CartaoIntroDbTemaA(resumo: String, onUsar: () -> Unit) {
             .fillMaxWidth()
             .clip(TemaATokens.ShapeCardCommon)
             .background(TemaATokens.DarkGraphiteSurface)
+            .vidroTemaA(TemaATokens.ShapeCardCommon)
             .border(1.dp, accent.copy(alpha = 0.35f), TemaATokens.ShapeCardCommon)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)

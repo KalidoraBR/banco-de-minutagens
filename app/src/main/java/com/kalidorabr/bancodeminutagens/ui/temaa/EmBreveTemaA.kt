@@ -90,7 +90,7 @@ fun EmBreveListaTemaA(
 
     LazyColumn(
         modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = TemaATokens.SideMargin, end = TemaATokens.SideMargin, top = 8.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = TemaATokens.SideMargin, end = TemaATokens.SideMargin, top = 8.dp, bottom = TemaATokens.EspacoBarraAbas),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (futuras.isNotEmpty()) {
@@ -158,6 +158,7 @@ private fun LinhaEmBreveTemaA(
             .fillMaxWidth()
             .clip(TemaATokens.ShapeCardCommon)
             .background(TemaATokens.DarkGraphiteSurface)
+            .vidroTemaA(TemaATokens.ShapeCardCommon)
             .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -440,7 +440,8 @@ object GoogleSheetsImportService {
                 val tempEp = EpisodioItem(
                     id = "${tmdbId}_s${seasonNum}_ep_$episodeNum",
                     numero = episodeNum,
-                    minutagens = novasMinutagens
+                    minutagens = novasMinutagens,
+                    aguardandoConcluir = localEp?.aguardandoConcluir ?: false
                 )
                 val novoStatusEp = SerieProgressoUtils.calcularStatusEpisodio(tempEp)
 

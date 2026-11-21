@@ -62,9 +62,9 @@ object TemaASheetColors {
     private fun t(a: Long, b: Long, c: Long, d: Long) = Color(
         when (com.kalidorabr.bancodeminutagens.ui.temaa.TemaVisual.modo) { 1 -> b; 2 -> c; 3 -> d; else -> a }
     )
-    val Sheet get() = t(0xFF141417, 0xFFF4F1EC, 0xFF222329, 0xFF151129)
-    val Group get() = t(0xFF1A1A1F, 0xFFFFFFFF, 0xFF2C2D34, 0xFF1C1638)
-    val GroupDivider get() = t(0xFF24242A, 0xFFEFEAE2, 0xFF33343C, 0xFF2E2758)
+    val Sheet get() = t(0xFF16171D, 0xFFF4F1EC, 0xFF222329, 0xFF151129)
+    val Group get() = t(0xFF1F2027, 0xFFFFFFFF, 0xFF2C2D34, 0xFF1C1638)
+    val GroupDivider get() = t(0xFF2A2B33, 0xFFEFEAE2, 0xFF33343C, 0xFF2E2758)
     val CloseButton get() = if (com.kalidorabr.bancodeminutagens.ui.temaa.TemaVisual.b) Color(0xFFEAE4DB) else TemaATokens.Neutro
     val Handle get() = t(0xFF34343B, 0xFFD8D1C7, 0xFF4A4B52, 0xFF3A3170)
     val Scrim get() = t(0xA8000000, 0x80141218, 0xB8080A0A, 0xBC060410)

@@ -3,6 +3,10 @@ package com.kalidorabr.bancodeminutagens.ui.temaa
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -105,6 +109,8 @@ object TemaATokens {
     val HeightPrimaryButton = 54.dp
     val HeightSecondaryButton = 46.dp
     val HeightBottomNav = 64.dp
+    /** Espaço no fim das listas das abas: a barra de baixo flutua por cima do conteúdo. */
+    val EspacoBarraAbas = 100.dp
     val HeightSearchField = 48.dp
     val HeightChip = 36.dp
 
@@ -159,13 +165,16 @@ object TemaATokens {
         when (TemaVisual.modo) { 1 -> bb; 2 -> cc; 3 -> dd; else -> a }
     )
 
-    val DarkBackground get() = c(0xFF0B0B0D, 0xFFF4F1EC, 0xFF16171B, 0xFF0B0918)
-    val DarkGraphiteSurface get() = c(0xFF141417, 0xFFFFFFFF, 0xFF222329, 0xFF151129)
-    val DarkCardSurface get() = c(0xFF17171B, 0xFFFFFFFF, 0xFF222329, 0xFF151129)
-    val DarkBorder get() = c(0xFF2A2A30, 0xFFE4DDD3, 0xFF33343C, 0xFF2E2758)
+    val DarkBackground get() = c(0xFF0E0F13, 0xFFF4F1EC, 0xFF16171B, 0xFF0B0918)
+    val DarkGraphiteSurface get() = c(0x14FFFFFF, 0xFFFFFFFF, 0xFF222329, 0xFF151129)
+    val DarkCardSurface get() = c(0x1AFFFFFF, 0xFFFFFFFF, 0xFF222329, 0xFF151129)
+    val DarkBorder get() = c(0x1FFFFFFF, 0xFFE4DDD3, 0xFF33343C, 0xFF2E2758)
     val SubtleBorder get() = c(0xFF34343B, 0xFFD8D1C7, 0xFF3A3B44, 0xFF3A3170)
-    val Track get() = c(0xFF26262C, 0xFFECE7DF, 0xFF2C2D34, 0xFF211A40)
-    val NavSurface get() = c(0xEB1C1C21, 0xFF1A1A1F, 0xEB16171B, 0xE6151129)
+    val Track get() = c(0x1FFFFFFF, 0xFFECE7DF, 0xFF2C2D34, 0xFF211A40)
+    val NavSurface get() = c(0x1FFFFFFF, 0xFF1A1A1F, 0xEB16171B, 0xE6151129)
+
+    /** Superfícies que não podem ser transparentes (pop-ups, cartão com imagem por trás). No Grafite, grafite opaco. */
+    val SuperficieSolida get() = c(0xFF191A20, 0xFFFFFFFF, 0xFF222329, 0xFF151129)
 
     val TextWhite get() = c(0xFFF2F2F3, 0xFF1A1A1F, 0xFFFFFFFF, 0xFFFFFFFF)
     val TextGray get() = c(0xFF9A9AA3, 0xFF6E6873, 0xFFB4B5BD, 0xFFC4BEE6)
@@ -179,7 +188,7 @@ object TemaATokens {
     val ErroFundo get() = c(0xFF2A1416, 0xFFFCE4E7, 0xFF2A1416, 0xFF2A1430)
     val Perigo get() = c(0xFFFF6B70, 0xFFC21F33, 0xFFFF6B70, 0xFFFF6B8B)
     val PerigoFundo get() = c(0xFF241315, 0xFFFBE3E6, 0xFF241315, 0xFF2A1430)
-    val Neutro get() = c(0xFF1F1F24, 0xFFEFEAE2, 0xFF2C2D34, 0xFF211A40)
+    val Neutro get() = c(0x1FFFFFFF, 0xFFEFEAE2, 0xFF2C2D34, 0xFF211A40)
     val TextoCorpo get() = c(0xFFA8A8B0, 0xFF5E5850, 0xFFB4B5BD, 0xFFC4BEE6)
     val TextoApagado get() = c(0xFF8A8A93, 0xFF8A8390, 0xFF8A8B93, 0xFF8C84B0)
     val Desativado get() = c(0xFF4A4A52, 0xFFC9C2B8, 0xFF4A4B52, 0xFF3A3466)
@@ -210,6 +219,37 @@ object TemaATokens {
     val GlassSurfaceBackground get() = DarkCardSurface
     val GlassSurfaceBorder: Brush = Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
 }
+
+/**
+ * Fundo das telas. No Grafite: grafite escuro com duas luzes suaves (cor de destaque e azul),
+ * que aparecem através dos cartões de vidro. Nos outros temas, a cor sólida de sempre.
+ */
+@androidx.compose.runtime.Composable
+fun Modifier.fundoTelaTemaA(): Modifier {
+    if (TemaVisual.modo != 0) return this.background(TemaATokens.DarkBackground)
+    val destaque = androidx.compose.material3.MaterialTheme.colorScheme.primary
+    return this.drawBehind {
+        drawRect(TemaATokens.DarkBackground)
+        fun luz(cor: Color, alfa: Float, x: Float, y: Float, raio: Float) {
+            val centro = androidx.compose.ui.geometry.Offset(size.width * x, size.height * y)
+            val r = size.width * raio
+            drawCircle(Brush.radialGradient(listOf(cor.copy(alpha = alfa), Color.Transparent), center = centro, radius = r), radius = r, center = centro)
+        }
+        luz(destaque, 0.26f, 0.12f, 0.06f, 0.85f)
+        luz(Color(0xFF5A6EFF), 0.17f, 0.98f, 0.45f, 0.8f)
+        luz(destaque, 0.12f, 0.15f, 0.95f, 0.8f)
+    }
+}
+
+/** Borda de vidro do Grafite: fio de luz em cima que some para baixo. Nos outros temas não faz nada. */
+@androidx.compose.runtime.Composable
+fun Modifier.vidroTemaA(shape: androidx.compose.ui.graphics.Shape): Modifier =
+    if (TemaVisual.modo != 0) this
+    else this.border(
+        1.dp,
+        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.24f), Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.05f))),
+        shape
+    )
 
 /** Aplica Manrope em toda a tipografia quando o Tema A está ativo. */
 @androidx.compose.runtime.Composable

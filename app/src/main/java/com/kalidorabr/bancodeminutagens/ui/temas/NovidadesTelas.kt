@@ -1,5 +1,6 @@
 package com.kalidorabr.bancodeminutagens.ui.temas
 
+import com.kalidorabr.bancodeminutagens.ui.temaa.vidroTemaA
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -182,7 +183,7 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
         }
 
         Column(
-            Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(16.dp),
+            Modifier.fillMaxWidth().clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -252,7 +253,7 @@ fun TelaEstatisticas(est: Estatisticas, onBackClick: () -> Unit) {
 @Composable
 private fun QuadroNumero(rotulo: String, valor: String, detalhe: String?, modifier: Modifier, corDetalhe: Color = TemaATokens.TextGray, mono: Boolean = false) {
     Column(
-        modifier.clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).padding(14.dp),
+        modifier.clip(TemaATokens.ShapeCardCommon).background(TemaATokens.DarkGraphiteSurface).vidroTemaA(TemaATokens.ShapeCardCommon).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(rotulo, color = TemaATokens.TextGray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)

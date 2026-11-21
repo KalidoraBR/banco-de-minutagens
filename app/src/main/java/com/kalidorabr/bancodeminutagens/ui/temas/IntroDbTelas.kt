@@ -82,7 +82,7 @@ fun DialogoIntroDb(progresso: ProgressoIntroDb?, onFechar: () -> Unit) {
                     .padding(horizontal = 24.dp)
                     .widthIn(max = 400.dp)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(TemaATokens.DarkGraphiteSurface)
+                    .background(TemaATokens.SuperficieSolida)
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
                     .padding(22.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)

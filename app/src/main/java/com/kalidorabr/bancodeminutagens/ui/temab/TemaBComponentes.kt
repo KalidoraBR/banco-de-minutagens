@@ -324,7 +324,7 @@ fun BarraAbasTemaB(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(TemaATokens.DarkBackground)
+            // sem faixa de fundo: a barra flutua por cima do conteúdo
             .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp)
             .height(64.dp)
             .shadow(14.dp, RoundedCornerShape(20.dp))

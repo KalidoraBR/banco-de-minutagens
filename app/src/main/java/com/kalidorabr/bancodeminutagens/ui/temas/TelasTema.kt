@@ -315,6 +315,7 @@ fun TelaEpisodio(
     rotuloProximaTemporada: String = "",
     onProximaTemporada: () -> Unit = {},
     onIrProximoPendente: () -> Unit = {},
+    esperandoConcluir: Boolean = false,
     onVoltarTemporada: () -> Unit = onBackClick,
     onUsarIntroDb: () -> Unit = {},
     duracaoEpisodioMin: Int = 0
@@ -322,7 +323,7 @@ fun TelaEpisodio(
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> EpisodioDetailTemaBScreen(...)
-        else -> EpisodioDetailTemaAScreen(nomeSerie = nomeSerie, temporadaLabel = temporadaLabel, numeroEpisodio = numeroEpisodio, tituloEpisodio = tituloEpisodio, dataExibicao = dataExibicao, statusEpisodioLabel = statusEpisodioLabel, minutagens = minutagens, isAnteriorEnabled = isAnteriorEnabled, isProximoEnabled = isProximoEnabled, isCopyEnabled = isCopyEnabled, copySourceLabel = copySourceLabel, onBackClick = onBackClick, onCopyClick = onCopyClick, onSecaoClick = onSecaoClick, onAnteriorClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = true; onAnteriorClick() }, onProximoClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = false; onProximoClick() }, secaoEditando = secaoEditando, duracaoFixaEditando = duracaoFixaEditando, onSaveSecao = onSaveSecao, onDismissEdit = onDismissEdit, minutagensAnterior = minutagensAnterior, rotuloAnterior = rotuloAnterior, rotuloProximo = rotuloProximo, duracaoTipicaEditando = duracaoTipicaEditando, onConcluirClick = onConcluirClick, introDbResumo = introDbResumo, statusPlanilha = statusPlanilha, statusIntroDb = statusIntroDb, onTocarPlanilha = onTocarPlanilha, onTocarIntroDb = onTocarIntroDb, temporadaCompleta = temporadaCompleta, rotuloProximaTemporada = rotuloProximaTemporada, onProximaTemporada = onProximaTemporada, onIrProximoPendente = onIrProximoPendente, onVoltarTemporada = onVoltarTemporada, onUsarIntroDb = onUsarIntroDb, duracaoEpisodioMin = duracaoEpisodioMin)
+        else -> EpisodioDetailTemaAScreen(nomeSerie = nomeSerie, temporadaLabel = temporadaLabel, numeroEpisodio = numeroEpisodio, tituloEpisodio = tituloEpisodio, dataExibicao = dataExibicao, statusEpisodioLabel = statusEpisodioLabel, minutagens = minutagens, isAnteriorEnabled = isAnteriorEnabled, isProximoEnabled = isProximoEnabled, isCopyEnabled = isCopyEnabled, copySourceLabel = copySourceLabel, onBackClick = onBackClick, onCopyClick = onCopyClick, onSecaoClick = onSecaoClick, onAnteriorClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = true; onAnteriorClick() }, onProximoClick = { com.kalidorabr.bancodeminutagens.ui.temab.DirecaoEpisodioB.anterior = false; onProximoClick() }, secaoEditando = secaoEditando, duracaoFixaEditando = duracaoFixaEditando, onSaveSecao = onSaveSecao, onDismissEdit = onDismissEdit, minutagensAnterior = minutagensAnterior, rotuloAnterior = rotuloAnterior, rotuloProximo = rotuloProximo, duracaoTipicaEditando = duracaoTipicaEditando, onConcluirClick = onConcluirClick, introDbResumo = introDbResumo, statusPlanilha = statusPlanilha, statusIntroDb = statusIntroDb, onTocarPlanilha = onTocarPlanilha, onTocarIntroDb = onTocarIntroDb, temporadaCompleta = temporadaCompleta, rotuloProximaTemporada = rotuloProximaTemporada, onProximaTemporada = onProximaTemporada, onIrProximoPendente = onIrProximoPendente, esperandoConcluir = esperandoConcluir, onVoltarTemporada = onVoltarTemporada, onUsarIntroDb = onUsarIntroDb, duracaoEpisodioMin = duracaoEpisodioMin)
     }
 }
 
@@ -557,6 +558,7 @@ fun TelaTemporada(
     onEnviarIntroDbConfirmed: (Set<String>) -> Unit = {},
     noIntroDb: Set<String> = emptySet(),
     emRevisaoIntroDb: Set<String> = emptySet(),
+    enviandoIntroDb: Set<String> = emptySet(),
     onConferirIntroDb: () -> Unit = {},
     conferirAoAbrir: () -> Unit = {},
     temporadaAnterior: String? = null,
@@ -568,6 +570,6 @@ fun TelaTemporada(
     when (LocalModoVisual.current) {
         // Os temas B, C e D usam as telas do A até ganharem o próprio desenho.
         // Para trocar: acrescente aqui, por exemplo, VisualMode.TEMA_B -> TemporadaDetailTemaBScreen(...)
-        else -> TemporadaDetailTemaAScreen(nomeSerie = nomeSerie, nomeTemporada = nomeTemporada, episodios = episodios, onBackClick = onBackClick, onExportJsonClick = onExportJsonClick, onBatchFillConfirmed = onBatchFillConfirmed, onEpisodioClick = onEpisodioClick, onLimparEpisodiosConfirmed = onLimparEpisodiosConfirmed, temChaveIntroDb = temChaveIntroDb, onEnviarIntroDbConfirmed = onEnviarIntroDbConfirmed, noIntroDb = noIntroDb, emRevisaoIntroDb = emRevisaoIntroDb, onConferirIntroDb = onConferirIntroDb, temporadaAnterior = temporadaAnterior, temporadaProxima = temporadaProxima, onTrocarTemporada = onTrocarTemporada)
+        else -> TemporadaDetailTemaAScreen(nomeSerie = nomeSerie, nomeTemporada = nomeTemporada, episodios = episodios, onBackClick = onBackClick, onExportJsonClick = onExportJsonClick, onBatchFillConfirmed = onBatchFillConfirmed, onEpisodioClick = onEpisodioClick, onLimparEpisodiosConfirmed = onLimparEpisodiosConfirmed, temChaveIntroDb = temChaveIntroDb, onEnviarIntroDbConfirmed = onEnviarIntroDbConfirmed, noIntroDb = noIntroDb, emRevisaoIntroDb = emRevisaoIntroDb, enviandoIntroDb = enviandoIntroDb, onConferirIntroDb = onConferirIntroDb, temporadaAnterior = temporadaAnterior, temporadaProxima = temporadaProxima, onTrocarTemporada = onTrocarTemporada)
     }
 }

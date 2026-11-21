@@ -108,7 +108,7 @@ fun BarraAbasTemaC(itens: List<Pair<Painter, String>>, selecionado: Int, onSelec
     Box(
         Modifier
             .fillMaxWidth()
-            .background(TemaATokens.DarkBackground)
+            // sem faixa de fundo: a barra flutua por cima do conteúdo
             .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 10.dp)
     ) {
         Row(
