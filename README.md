@@ -29,13 +29,13 @@ Você adiciona a série pelo nome, o app traz temporadas, episódios, pôsteres 
 
 <div align="center">
 
-| Tema A · minimalista | Tema B · claro e quente | Tema C · streaming | Tema D · painel circular |
+| Grafite · relevo de vidro | Papel · claro e quente | Cinema · streaming | Neon · painel circular |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/telas/inicio-a.png" width="200"> | <img src="docs/telas/inicio-b.png" width="200"> | <img src="docs/telas/inicio-c.png" width="200"> | <img src="docs/telas/inicio-d.png" width="200"> |
 
-| Episódio | Temporada | Estatísticas |
-|:---:|:---:|:---:|
-| <img src="docs/telas/episodio-b.png" width="200"> | <img src="docs/telas/temporada-d.png" width="200"> | <img src="docs/telas/estatisticas-c.png" width="200"> |
+| Episódio | Série | Temporada | Estatísticas |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/telas/episodio-a.png" width="200"> | <img src="docs/telas/serie-b.png" width="200"> | <img src="docs/telas/temporada-b.png" width="200"> | <img src="docs/telas/estatisticas-c.png" width="200"> |
 
 </div>
 
